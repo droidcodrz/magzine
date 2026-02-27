@@ -1,7 +1,30 @@
+import io
+import os
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.core.files.base import ContentFile
+from PIL import Image
 import uuid
+
+
+def compress_cover(image_field, max_width=1400, max_height=900, quality=85):
+    """Compress and resize article cover image to max 1400x900 JPEG."""
+    img = Image.open(image_field)
+    if img.mode in ('RGBA', 'P', 'LA'):
+        bg = Image.new('RGB', img.size, (255, 255, 255))
+        if img.mode == 'P':
+            img = img.convert('RGBA')
+        bg.paste(img, mask=img.split()[-1] if img.mode in ('RGBA', 'LA') else None)
+        img = bg
+    elif img.mode != 'RGB':
+        img = img.convert('RGB')
+    img.thumbnail((max_width, max_height), Image.LANCZOS)
+    output = io.BytesIO()
+    img.save(output, format='JPEG', quality=quality, optimize=True)
+    output.seek(0)
+    base_name = os.path.splitext(os.path.basename(image_field.name))[0]
+    return ContentFile(output.read(), name=f'{base_name}.jpg')
 
 
 class Category(models.Model):
@@ -77,6 +100,17 @@ class Article(models.Model):
                 slug = f'{base_slug}-{counter}'
                 counter += 1
             self.slug = slug
+
+        if self.cover_image:
+            try:
+                old = Article.objects.get(pk=self.pk)
+                image_changed = old.cover_image != self.cover_image
+            except Article.DoesNotExist:
+                image_changed = True
+            if image_changed:
+                compressed = compress_cover(self.cover_image)
+                self.cover_image.save(compressed.name, compressed, save=False)
+
         super().save(*args, **kwargs)
 
     def increment_views(self):

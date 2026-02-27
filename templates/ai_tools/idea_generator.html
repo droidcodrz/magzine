@@ -6,20 +6,17 @@
 {% block content %}
 <div class="dash-page">
 
-  <!-- Page Header -->
   <div class="page-header">
     <div class="page-header-icon" style="background:#EEF2FF;color:#4F46E5;">
       <i class="bi bi-lightbulb-fill"></i>
     </div>
     <div>
       <h1 class="page-header-title">AI Idea Generator</h1>
-      <p class="page-header-sub">Select topics and let Claude AI generate compelling magazine article ideas for you.</p>
+      <p class="page-header-sub">Select topics and let AI generate compelling magazine article ideas for you.</p>
     </div>
   </div>
 
   <div class="generator-layout">
-
-    <!-- Left: Generator Form -->
     <div class="generator-main">
       <div class="dash-card">
         <div class="dash-card-header">
@@ -39,40 +36,67 @@
         <div style="padding:1.25rem 1.5rem 0;">
           <label class="gen-label">2. Add Context <span class="gen-label-optional">(optional)</span></label>
           <textarea id="additionalContext" class="gen-textarea" rows="3"
-            placeholder="e.g., 'Focus on local stories in London' or 'Target young professionals aged 25-35'"></textarea>
+            placeholder="e.g. 'Focus on local stories in London' or 'Target young professionals aged 25-35'"></textarea>
         </div>
 
-        <div class="gen-actions">
-          <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateIdeas()">
-            <i class="bi bi-stars"></i> Generate Ideas
-          </button>
-          <a href="{% url 'manage_ideas' %}" class="dash-btn dash-btn-outline">
-            <i class="bi bi-collection"></i> View History
-          </a>
+        <div style="padding:1.25rem 1.5rem;">
+          <label class="gen-label" style="margin-bottom:0.5rem;">3. AI Model</label>
+          <div class="model-selector-row">
+            <div class="model-selector" id="modelSelector">
+              <button type="button" class="model-btn active" data-model="claude"
+                title="Claude Sonnet 4.6 - Creative, nuanced ideas">
+                <span class="model-btn-icon">&#x1F916;</span>
+                <span class="model-btn-label">Claude</span>
+                <span class="model-btn-sub">Sonnet 4.6</span>
+              </button>
+              <button type="button" class="model-btn" data-model="openai"
+                title="GPT-4o - Broad, research-driven ideas">
+                <span class="model-btn-icon">&#x2728;</span>
+                <span class="model-btn-label">OpenAI</span>
+                <span class="model-btn-sub">GPT-4o</span>
+              </button>
+              <button type="button" class="model-btn" data-model="auto"
+                title="Auto - Picks the best model based on topics">
+                <span class="model-btn-icon">&#x26A1;</span>
+                <span class="model-btn-label">Auto</span>
+                <span class="model-btn-sub">Best fit</span>
+              </button>
+            </div>
+            <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateIdeas()">
+              <i class="bi bi-stars"></i> Generate Ideas
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:1rem;margin-top:0.6rem;flex-wrap:wrap;">
+            <p class="gen-hint" style="padding:0;margin:0;"><i class="bi bi-info-circle me-1"></i>Generates 8 article ideas</p>
+            <a href="{% url 'manage_ideas' %}" class="dash-link" style="font-size:0.78rem;">
+              <i class="bi bi-collection me-1"></i>View history
+            </a>
+          </div>
         </div>
       </div>
 
-      <!-- Loading -->
       <div id="loadingState" class="gen-loading" style="display:none;">
         <div class="gen-spinner"></div>
-        <p>Claude is generating your ideas...</p>
+        <div>
+          <p id="loadingModelLabel">Generating with Claude...</p>
+          <p class="gen-loading-sub">Generating 8 article ideas...</p>
+        </div>
       </div>
 
-      <!-- Error -->
-      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;"></div>
+      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:1rem;"></div>
 
-      <!-- Results -->
       <div id="ideasResults" style="display:none;">
         <div class="dash-card mt-4">
           <div class="dash-card-header">
             <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>Generated Ideas</h2>
-            <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateIdeas()">
-              <i class="bi bi-arrow-clockwise"></i> Regenerate
-            </button>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span id="modelUsedBadge" class="model-used-badge"></span>
+              <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateIdeas()">
+                <i class="bi bi-arrow-clockwise"></i> Regenerate
+              </button>
+            </div>
           </div>
           <div class="ideas-grid" id="ideasGrid"></div>
-
-          <!-- CTA -->
           <div id="useIdeaSection" style="display:none;" class="gen-cta">
             <hr class="gen-divider">
             <p>Ready to write this article?</p>
@@ -87,22 +111,31 @@
       </div>
     </div>
 
-    <!-- Right: History Panel -->
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">Recent Sessions</h2>
+          <h2 class="dash-card-title">
+            {% if is_admin %}All Sessions{% else %}Recent Sessions{% endif %}
+          </h2>
           <a href="{% url 'manage_ideas' %}" class="dash-link">View all</a>
         </div>
         {% if recent_requests %}
           {% for req in recent_requests %}
           <div class="history-item">
-            <div class="history-item-date">{{ req.created_at|date:"M d, Y · H:i" }}</div>
-            <div class="history-item-topics">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+              <div class="history-item-date">{{ req.created_at|date:"M d, Y" }}</div>
+              {% if req.ai_model_used %}
+                <span class="model-mini-badge model-{{ req.ai_model_used }}">{{ req.ai_model_used|upper }}</span>
+              {% endif %}
+            </div>
+            <div class="history-item-topics" style="margin-top:0.35rem;">
               {% for topic in req.topics %}
-              <span class="dash-tag">{{ topic }}</span>
+              <span class="dash-tag clickable-tag" data-topic="{{ topic }}" onclick="quickSelectTopic('{{ topic }}')">{{ topic }}</span>
               {% endfor %}
             </div>
+            {% if is_admin and req.user != request.user %}
+            <div class="history-item-date" style="margin-top:0.2rem;color:#9333EA;">by {{ req.user.get_full_name }}</div>
+            {% endif %}
           </div>
           {% endfor %}
         {% else %}
@@ -113,13 +146,13 @@
         {% endif %}
       </div>
 
-      <!-- Tips -->
       <div class="dash-card mt-3 tip-card">
         <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Tips</h3>
         <ul class="tip-list">
           <li>Select multiple topics for cross-topic ideas</li>
+          <li><strong>Click any tag</strong> in history to re-select that topic</li>
           <li>Add context to narrow the focus</li>
-          <li>Click an idea card to select it, then generate a full draft</li>
+          <li>Click an idea card then Generate Full Draft</li>
         </ul>
       </div>
     </div>
@@ -130,6 +163,27 @@
 {% block extra_js %}
 <script>
   let selectedTopics = [];
+  let selectedModel = 'claude';
+
+  const preselected = {{ preselected_topics|safe }};
+  window.addEventListener('load', function() {
+    if (preselected && preselected.length) {
+      document.querySelectorAll('.topic-chip').forEach(function(chip) {
+        if (preselected.includes(chip.dataset.topic)) {
+          chip.classList.add('selected');
+          selectedTopics.push(chip.dataset.topic);
+        }
+      });
+    }
+  });
+
+  document.querySelectorAll('.model-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedModel = btn.dataset.model;
+    });
+  });
 
   function toggleTopic(chip) {
     const topic = chip.dataset.topic;
@@ -137,21 +191,28 @@
       chip.classList.remove('selected');
       selectedTopics = selectedTopics.filter(t => t !== topic);
     } else {
-      if (selectedTopics.length >= 8) {
-        alert('You can select at most 8 topics.');
-        return;
-      }
+      if (selectedTopics.length >= 8) { alert('You can select at most 8 topics.'); return; }
       chip.classList.add('selected');
       selectedTopics.push(topic);
     }
   }
 
-  async function generateIdeas() {
-    if (selectedTopics.length === 0) {
-      alert('Please select at least one topic.');
-      return;
+  function quickSelectTopic(topic) {
+    const chip = document.querySelector('.topic-chip[data-topic="' + topic + '"]');
+    if (!chip) return;
+    if (!chip.classList.contains('selected')) {
+      if (selectedTopics.length >= 8) { alert('Maximum 8 topics selected.'); return; }
+      chip.classList.add('selected');
+      selectedTopics.push(topic);
     }
+    chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function generateIdeas() {
+    if (selectedTopics.length === 0) { alert('Please select at least one topic.'); return; }
     const context = document.getElementById('additionalContext').value.trim();
+    const modelLabels = { claude: 'Claude Sonnet 4.6', openai: 'OpenAI GPT-4o', auto: 'Auto (best fit)' };
+    document.getElementById('loadingModelLabel').textContent = 'Generating with ' + modelLabels[selectedModel] + '...';
     document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('ideasResults').style.display = 'none';
     document.getElementById('errorState').style.display = 'none';
@@ -161,10 +222,16 @@
       const response = await fetch('{% url "generate_ideas" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ topics: selectedTopics, context: context }),
+        body: JSON.stringify({ topics: selectedTopics, context: context, model: selectedModel }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to generate ideas.');
+
+      const modelNames = { claude: 'Claude', openai: 'OpenAI', auto: 'Auto' };
+      const badge = document.getElementById('modelUsedBadge');
+      badge.textContent = modelNames[data.model_used || selectedModel] || selectedModel;
+      badge.className = 'model-used-badge model-' + (data.model_used || selectedModel);
+
       renderIdeas(data.ideas);
     } catch (err) {
       const errEl = document.getElementById('errorState');
@@ -183,12 +250,11 @@
       const card = document.createElement('div');
       card.className = 'idea-result-card';
       card.onclick = function() { selectIdea(card, idea.title, idea.description); };
-      card.innerHTML = `
-        <div class="idea-result-num">Idea ${String(index + 1).padStart(2,'0')}</div>
-        <div class="idea-result-title">${escapeHtml(idea.title)}</div>
-        <div class="idea-result-desc">${escapeHtml(idea.description)}</div>
-        ${idea.angle ? `<div class="idea-result-angle"><i class="bi bi-arrow-right-short"></i>${escapeHtml(idea.angle)}</div>` : ''}
-      `;
+      card.innerHTML =
+        '<div class="idea-result-num">Idea ' + String(index + 1).padStart(2,'0') + '</div>' +
+        '<div class="idea-result-title">' + escapeHtml(idea.title) + '</div>' +
+        '<div class="idea-result-desc">' + escapeHtml(idea.description) + '</div>' +
+        (idea.angle ? '<div class="idea-result-angle"><i class="bi bi-arrow-right-short"></i>' + escapeHtml(idea.angle) + '</div>' : '');
       grid.appendChild(card);
     });
     document.getElementById('ideasResults').style.display = 'block';

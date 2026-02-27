@@ -1,18 +1,77 @@
+import json
+import re
 import anthropic
+import openai as openai_lib
 from django.conf import settings
 
 
-def get_client():
-    api_key = settings.ANTHROPIC_API_KEY
-    if not api_key:
+# ---------------------------------------------------------------------------
+# Model constants
+# ---------------------------------------------------------------------------
+MODEL_CLAUDE = 'claude'
+MODEL_OPENAI = 'openai'
+MODEL_AUTO   = 'auto'
+
+CLAUDE_MODEL  = 'claude-sonnet-4-6'
+OPENAI_MODEL  = 'gpt-4o'
+
+# Auto-routing: use Claude for creative/blog writing, OpenAI for research/ideas
+AUTO_BLOG_MODEL  = MODEL_CLAUDE
+AUTO_IDEAS_MODEL = MODEL_OPENAI  # Falls back to Claude if no OpenAI key
+
+
+def _resolve_model(selected: str, task: str) -> str:
+    """
+    Resolve 'auto' to an actual provider based on task type and available keys.
+    task: 'blog' or 'ideas'
+    Returns: 'claude' or 'openai'
+    """
+    if selected == MODEL_AUTO:
+        preferred = AUTO_BLOG_MODEL if task == 'blog' else AUTO_IDEAS_MODEL
+        # Fall back to Claude if OpenAI key not available
+        if preferred == MODEL_OPENAI and not settings.OPENAI_API_KEY:
+            return MODEL_CLAUDE
+        if preferred == MODEL_CLAUDE and not settings.ANTHROPIC_API_KEY:
+            return MODEL_OPENAI
+        return preferred
+    return selected
+
+
+def _get_anthropic():
+    key = settings.ANTHROPIC_API_KEY
+    if not key:
         raise ValueError('ANTHROPIC_API_KEY is not configured. Please set it in your .env file.')
-    return anthropic.Anthropic(api_key=api_key)
+    return anthropic.Anthropic(api_key=key)
 
 
-def generate_article_ideas(topics: list, additional_context: str = '') -> list:
-    """Generate magazine article ideas based on selected topics."""
-    client = get_client()
+def _get_openai():
+    key = settings.OPENAI_API_KEY
+    if not key:
+        raise ValueError('OPENAI_API_KEY is not configured. Please set it in your .env file.')
+    return openai_lib.OpenAI(api_key=key)
 
+
+def _extract_json_list(text: str) -> list:
+    match = re.search(r'\[.*\]', text, re.DOTALL)
+    if match:
+        return json.loads(match.group())
+    return json.loads(text)
+
+
+def _extract_json_object(text: str) -> dict:
+    match = re.search(r'\{.*\}', text, re.DOTALL)
+    if match:
+        return json.loads(match.group())
+    return json.loads(text)
+
+
+# ---------------------------------------------------------------------------
+# Generate Article Ideas
+# ---------------------------------------------------------------------------
+
+def generate_article_ideas(topics: list, additional_context: str = '', model: str = MODEL_CLAUDE) -> list:
+    """Generate magazine article ideas. Supports claude, openai, and auto."""
+    provider = _resolve_model(model, task='ideas')
     topics_str = ', '.join(topics)
     context_str = f'\nAdditional focus: {additional_context}' if additional_context else ''
 
@@ -25,7 +84,7 @@ For each idea, provide:
 3. The main angle or hook
 4. Target audience
 
-Format your response as a JSON array with this structure:
+Format your response as a JSON array ONLY (no extra text):
 [
   {{
     "title": "Article Title Here",
@@ -35,31 +94,46 @@ Format your response as a JSON array with this structure:
   }}
 ]
 
-Make the ideas diverse, timely, and genuinely interesting. Focus on stories that would captivate readers."""
+Make the ideas diverse, timely, and genuinely interesting."""
 
-    message = client.messages.create(
-        model='claude-sonnet-4-6',
-        max_tokens=2048,
-        messages=[{'role': 'user', 'content': prompt}],
-    )
-
-    import json
-    import re
-    response_text = message.content[0].text
-
-    # Extract JSON from response
-    json_match = re.search(r'\[.*\]', response_text, re.DOTALL)
-    if json_match:
-        ideas = json.loads(json_match.group())
+    if provider == MODEL_OPENAI:
+        client = _get_openai()
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=2048,
+            response_format={'type': 'json_object'},
+        )
+        text = response.choices[0].message.content
+        # OpenAI with json_object wraps in an object, so try both
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return parsed
+            # Common wrapper keys
+            for key in ('ideas', 'articles', 'results', 'items'):
+                if key in parsed and isinstance(parsed[key], list):
+                    return parsed[key]
+            return list(parsed.values())[0]
+        except Exception:
+            return _extract_json_list(text)
     else:
-        ideas = json.loads(response_text)
+        client = _get_anthropic()
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=2048,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        return _extract_json_list(message.content[0].text)
 
-    return ideas
 
+# ---------------------------------------------------------------------------
+# Generate Blog Draft
+# ---------------------------------------------------------------------------
 
-def generate_blog_draft(idea: str) -> dict:
-    """Generate a full blog article draft from an idea."""
-    client = get_client()
+def generate_blog_draft(idea: str, model: str = MODEL_CLAUDE) -> dict:
+    """Generate a full blog article draft. Supports claude, openai, and auto."""
+    provider = _resolve_model(model, task='blog')
 
     prompt = f"""You are a talented magazine writer. Write a complete, engaging magazine article based on this idea:
 
@@ -73,7 +147,7 @@ Write a well-structured article with:
 5. A strong conclusion
 6. The article should be 600-900 words
 
-Format your response as JSON:
+Respond with a JSON object ONLY (no extra text):
 {{
   "title": "The Article Title",
   "excerpt": "A 1-2 sentence excerpt/teaser for the article",
@@ -82,21 +156,24 @@ Format your response as JSON:
 
 Make it sophisticated, well-researched in tone, and appropriate for a premium magazine audience."""
 
-    message = client.messages.create(
-        model='claude-sonnet-4-6',
-        max_tokens=4096,
-        messages=[{'role': 'user', 'content': prompt}],
-    )
-
-    import json
-    import re
-    response_text = message.content[0].text
-
-    # Extract JSON from response
-    json_match = re.search(r'\{.*\}', response_text, re.DOTALL)
-    if json_match:
-        result = json.loads(json_match.group())
+    if provider == MODEL_OPENAI:
+        client = _get_openai()
+        response = client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[{'role': 'user', 'content': prompt}],
+            max_tokens=4096,
+            response_format={'type': 'json_object'},
+        )
+        text = response.choices[0].message.content
+        try:
+            return json.loads(text)
+        except Exception:
+            return _extract_json_object(text)
     else:
-        result = json.loads(response_text)
-
-    return result
+        client = _get_anthropic()
+        message = client.messages.create(
+            model=CLAUDE_MODEL,
+            max_tokens=4096,
+            messages=[{'role': 'user', 'content': prompt}],
+        )
+        return _extract_json_object(message.content[0].text)

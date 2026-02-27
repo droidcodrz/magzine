@@ -5,12 +5,12 @@
 
 {% block content %}
 <div class="dash-page">
-
-  <!-- Page Header -->
   <div class="dash-welcome">
     <div>
       <h1 class="dash-welcome-title">Manage Blogs</h1>
-      <p class="dash-welcome-sub">All your AI-generated blog drafts in one place.</p>
+      <p class="dash-welcome-sub">
+        {% if is_admin %}All users' AI-generated blog drafts.{% else %}Your AI-generated blog drafts.{% endif %}
+      </p>
     </div>
     <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary">
       <i class="bi bi-plus-lg"></i> Generate New Blog
@@ -24,7 +24,10 @@
         <thead>
           <tr>
             <th>#</th>
+            {% if is_admin %}<th>Author</th>{% endif %}
             <th>Title / Idea</th>
+            <th>Model</th>
+            <th>Image</th>
             <th>Status</th>
             <th>Linked Article</th>
             <th>Created</th>
@@ -35,15 +38,34 @@
           {% for draft in drafts %}
           <tr>
             <td class="dash-table-muted">{{ forloop.counter }}</td>
+            {% if is_admin %}
+            <td>
+              <div style="font-size:0.825rem;font-weight:600;color:#1E293B;">{{ draft.user.get_full_name }}</div>
+              <div class="dash-table-muted" style="font-size:0.72rem;">{{ draft.user.email }}</div>
+            </td>
+            {% endif %}
             <td>
               <div class="dash-table-title">
-                <a href="{% url 'edit_draft' draft.id %}">
-                  {{ draft.title|default:draft.idea|truncatechars:55 }}
-                </a>
+                <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:50 }}</a>
                 <span class="ai-badge"><i class="bi bi-stars"></i> AI</span>
               </div>
               {% if draft.idea %}
-              <div class="dash-table-sub">{{ draft.idea|truncatechars:80 }}</div>
+              <div class="dash-table-sub">{{ draft.idea|truncatechars:70 }}</div>
+              {% endif %}
+            </td>
+            <td>
+              {% if draft.ai_model_used %}
+                <span class="model-mini-badge model-{{ draft.ai_model_used }}">{{ draft.ai_model_used|upper }}</span>
+              {% else %}
+                <span class="dash-table-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if draft.featured_image %}
+                <img src="{{ draft.featured_image.url }}" alt="cover"
+                  style="width:48px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">
+              {% else %}
+                <span class="dash-table-muted">—</span>
               {% endif %}
             </td>
             <td>
@@ -52,7 +74,7 @@
             <td>
               {% if draft.linked_article %}
               <a href="{% url 'article_detail' draft.linked_article.slug %}" class="dash-link">
-                <i class="bi bi-link-45deg"></i> View Article
+                <i class="bi bi-link-45deg"></i> View
               </a>
               {% else %}
               <span class="dash-table-muted">—</span>
@@ -64,7 +86,8 @@
                 <a href="{% url 'edit_draft' draft.id %}" class="dash-icon-btn" title="Edit">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <form method="post" action="{% url 'delete_draft' draft.id %}" style="display:inline;" onsubmit="return confirm('Delete this draft?')">
+                <form method="post" action="{% url 'delete_draft' draft.id %}" style="display:inline;"
+                  onsubmit="return confirm('Delete this draft?')">
                   {% csrf_token %}
                   <button type="submit" class="dash-icon-btn dash-icon-btn-danger" title="Delete">
                     <i class="bi bi-trash"></i>

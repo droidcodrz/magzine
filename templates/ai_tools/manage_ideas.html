@@ -5,12 +5,12 @@
 
 {% block content %}
 <div class="dash-page">
-
-  <!-- Page Header -->
   <div class="dash-welcome">
     <div>
       <h1 class="dash-welcome-title">Manage Ideas</h1>
-      <p class="dash-welcome-sub">All your AI-generated idea sessions in one place.</p>
+      <p class="dash-welcome-sub">
+        {% if is_admin %}All users' AI-generated idea sessions.{% else %}Your AI-generated idea sessions.{% endif %}
+      </p>
     </div>
     <a href="{% url 'idea_generator' %}" class="dash-btn dash-btn-primary">
       <i class="bi bi-plus-lg"></i> Generate New Ideas
@@ -24,8 +24,10 @@
         <thead>
           <tr>
             <th>#</th>
-            <th>Topics</th>
-            <th>Ideas Generated</th>
+            {% if is_admin %}<th>User</th>{% endif %}
+            <th>Topics <span style="font-weight:400;color:#94A3B8;">(click to reuse)</span></th>
+            <th>Model</th>
+            <th>Ideas</th>
             <th>Context</th>
             <th>Date</th>
           </tr>
@@ -34,26 +36,36 @@
           {% for req in idea_requests %}
           <tr>
             <td class="dash-table-muted">{{ forloop.counter }}</td>
+            {% if is_admin %}
+            <td>
+              <div style="font-size:0.825rem;font-weight:600;color:#1E293B;">{{ req.user.get_full_name }}</div>
+              <div class="dash-table-muted" style="font-size:0.72rem;">{{ req.user.email }}</div>
+            </td>
+            {% endif %}
             <td>
               <div class="tag-wrap">
                 {% for topic in req.topics %}
-                <span class="dash-tag">{{ topic }}</span>
+                <a href="{% url 'idea_generator' %}?topics={{ topic }}" class="dash-tag clickable-tag" title="Click to generate ideas on '{{ topic }}'">
+                  {{ topic }}
+                </a>
                 {% endfor %}
               </div>
+            </td>
+            <td>
+              {% if req.ai_model_used %}
+                <span class="model-mini-badge model-{{ req.ai_model_used }}">{{ req.ai_model_used|upper }}</span>
+              {% else %}
+                <span class="dash-table-muted">—</span>
+              {% endif %}
             </td>
             <td class="dash-table-muted">
               {% if req.generated_ideas %}
                 {{ req.generated_ideas|length }} idea{{ req.generated_ideas|length|pluralize }}
-              {% else %}
-                —
-              {% endif %}
+              {% else %}—{% endif %}
             </td>
             <td class="dash-table-muted">
-              {% if req.additional_context %}
-                {{ req.additional_context|truncatechars:60 }}
-              {% else %}
-                <span style="color:#cbd5e1;">None</span>
-              {% endif %}
+              {% if req.additional_context %}{{ req.additional_context|truncatechars:55 }}
+              {% else %}<span style="color:#cbd5e1;">None</span>{% endif %}
             </td>
             <td class="dash-table-muted" style="white-space:nowrap;">{{ req.created_at|date:"M d, Y" }}</td>
           </tr>

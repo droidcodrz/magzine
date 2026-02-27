@@ -6,20 +6,19 @@
 {% block content %}
 <div class="dash-page">
 
-  <!-- Page Header -->
   <div class="page-header">
     <div class="page-header-icon" style="background:#F0FDF4;color:#16A34A;">
       <i class="bi bi-pencil-square"></i>
     </div>
     <div>
       <h1 class="page-header-title">AI Blog Draft Generator</h1>
-      <p class="page-header-sub">Share your article idea and Claude AI will generate a full draft you can edit and publish.</p>
+      <p class="page-header-sub">Describe your article idea and let AI write a full draft you can edit and publish.</p>
     </div>
   </div>
 
   <div class="generator-layout">
 
-    <!-- Left: Generator Form -->
+    <!-- Left: Form -->
     <div class="generator-main">
       <div class="dash-card">
         <div class="dash-card-header">
@@ -27,73 +26,111 @@
           <span class="dash-card-subtitle" id="charCountLabel">0 / 1000 characters</span>
         </div>
 
-        <textarea id="ideaInput" class="gen-textarea gen-textarea-lg" rows="6"
-          placeholder="e.g., 'Write an article about how remote work has changed urban planning in major cities, focusing on the decline of office districts and rise of mixed-use neighborhoods...'"></textarea>
-
-        <div class="gen-actions">
-          <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateDraft()">
-            <i class="bi bi-stars"></i> Generate Draft
-          </button>
-          <a href="{% url 'manage_blogs' %}" class="dash-btn dash-btn-outline">
-            <i class="bi bi-journal-text"></i> My Drafts
-          </a>
+        <div style="padding:1.25rem 1.5rem 0;">
+          <textarea id="ideaInput" class="gen-textarea gen-textarea-lg" rows="6"
+            placeholder="e.g. 'Write an article about how remote work has changed urban planning in major cities, focusing on the decline of office districts and the rise of mixed-use neighbourhoods...'"></textarea>
         </div>
-        <p class="gen-hint"><i class="bi bi-info-circle me-1"></i>Powered by Claude AI · Generation takes 15–30 seconds</p>
+
+        <!-- Model Selector + Generate Button -->
+        <div style="padding:1.25rem 1.5rem;">
+          <label class="gen-label" style="margin-bottom:0.5rem;">AI Model</label>
+          <div class="model-selector-row">
+            <div class="model-selector" id="modelSelector">
+              <button type="button" class="model-btn active" data-model="claude"
+                title="Claude Sonnet 4.6 — Best for creative, long-form writing">
+                <span class="model-btn-icon">🤖</span>
+                <span class="model-btn-label">Claude</span>
+                <span class="model-btn-sub">Sonnet 4.6</span>
+              </button>
+              <button type="button" class="model-btn" data-model="openai"
+                title="GPT-4o — Great for structured, research-based content">
+                <span class="model-btn-icon">✨</span>
+                <span class="model-btn-label">OpenAI</span>
+                <span class="model-btn-sub">GPT-4o</span>
+              </button>
+              <button type="button" class="model-btn" data-model="auto"
+                title="Auto — Picks the best model for each task automatically">
+                <span class="model-btn-icon">⚡</span>
+                <span class="model-btn-label">Auto</span>
+                <span class="model-btn-sub">Best fit</span>
+              </button>
+            </div>
+            <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateDraft()">
+              <i class="bi bi-stars"></i> Generate Draft
+            </button>
+          </div>
+          <p class="gen-hint" style="padding:0;margin-top:0.6rem;"><i class="bi bi-info-circle me-1"></i>Generation takes 15–30 seconds · Powered by Anthropic &amp; OpenAI</p>
+        </div>
       </div>
 
       <!-- Loading -->
       <div id="loadingState" class="gen-loading" style="display:none;">
         <div class="gen-spinner"></div>
         <div>
-          <p>Claude is writing your draft...</p>
+          <p id="loadingModelLabel">Generating with Claude...</p>
           <p class="gen-loading-sub">This may take 15–30 seconds</p>
         </div>
       </div>
 
       <!-- Error -->
-      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;"></div>
+      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:1rem;"></div>
 
       <!-- Draft Preview -->
       <div id="draftPreview" style="display:none;">
         <div class="dash-card mt-4">
           <div class="dash-card-header">
             <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Generated Draft</h2>
-            <span class="ai-badge"><i class="bi bi-stars"></i> AI Generated</span>
+            <div style="display:flex;align-items:center;gap:0.5rem;">
+              <span id="modelUsedBadge" class="model-used-badge"></span>
+              <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateDraft()">
+                <i class="bi bi-arrow-clockwise"></i> Regenerate
+              </button>
+            </div>
           </div>
           <div class="draft-preview-body">
             <h3 id="draftTitle" class="draft-preview-title"></h3>
             <div id="draftContent" class="draft-preview-content"></div>
           </div>
-          <div class="gen-actions" style="margin-top:1.5rem;">
+          <div class="gen-actions">
             <button class="dash-btn dash-btn-outline" onclick="generateDraft()">
               <i class="bi bi-arrow-clockwise"></i> Regenerate
             </button>
             <a id="editDraftBtn" href="#" class="dash-btn dash-btn-primary">
-              <i class="bi bi-pencil-square"></i> Edit & Save Draft
+              <i class="bi bi-pencil-square"></i> Edit &amp; Save Draft
             </a>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Right: Recent Drafts -->
+    <!-- Right: Sidebar -->
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">Recent Drafts</h2>
+          <h2 class="dash-card-title">
+            {% if is_admin %}All Drafts{% else %}My Recent Drafts{% endif %}
+          </h2>
           <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
 
         {% if drafts %}
-          {% for draft in drafts|slice:":6" %}
+          {% for draft in drafts|slice:":8" %}
           <div class="history-item">
             <div class="history-item-title">
-              <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:45 }}</a>
+              <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:44 }}</a>
             </div>
-            <div class="d-flex align-items-center justify-content-between mt-1">
-              <span class="history-item-date">{{ draft.created_at|date:"M d, Y" }}</span>
+            <div class="d-flex align-items-center justify-content-between mt-1" style="gap:0.5rem;">
+              <div style="display:flex;align-items:center;gap:0.4rem;">
+                <span class="history-item-date">{{ draft.created_at|date:"M d" }}</span>
+                {% if draft.ai_model_used %}
+                  <span class="model-mini-badge model-{{ draft.ai_model_used }}">{{ draft.ai_model_used|upper }}</span>
+                {% endif %}
+              </div>
               <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
             </div>
+            {% if is_admin and draft.user != request.user %}
+            <div class="history-item-date" style="color:#9333EA;">by {{ draft.user.get_full_name }}</div>
+            {% endif %}
           </div>
           {% endfor %}
         {% else %}
@@ -104,14 +141,12 @@
         {% endif %}
       </div>
 
-      <!-- Tips -->
       <div class="dash-card mt-3 tip-card">
-        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Tips for Better Drafts</h3>
+        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Model Guide</h3>
         <ul class="tip-list">
-          <li>Be specific about your topic and angle</li>
-          <li>Mention your target audience</li>
-          <li>Include key points you want covered</li>
-          <li>Specify the tone (formal, casual, etc.)</li>
+          <li><strong>Claude</strong> — Best for creative, long-form magazine writing</li>
+          <li><strong>OpenAI GPT-4o</strong> — Great for structured, research-based articles</li>
+          <li><strong>Auto</strong> — Picks Claude for blogs, OpenAI for research automatically</li>
         </ul>
       </div>
     </div>
@@ -122,7 +157,9 @@
 {% block extra_js %}
 <script>
   let currentDraftId = null;
+  let selectedModel = 'claude';
 
+  // Pre-fill from idea generator
   window.addEventListener('load', function() {
     const savedIdea = sessionStorage.getItem('ai_idea');
     if (savedIdea) {
@@ -130,6 +167,15 @@
       updateCharCount();
       sessionStorage.removeItem('ai_idea');
     }
+  });
+
+  // Model selector
+  document.querySelectorAll('.model-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedModel = btn.dataset.model;
+    });
   });
 
   const ideaInput = document.getElementById('ideaInput');
@@ -147,6 +193,8 @@
     if (!idea) { alert('Please enter your article idea.'); return; }
     if (idea.length < 10) { alert('Please provide more detail.'); return; }
 
+    const modelLabels = { claude: 'Claude Sonnet 4.6', openai: 'OpenAI GPT-4o', auto: 'Auto (best fit)' };
+    document.getElementById('loadingModelLabel').textContent = 'Generating with ' + modelLabels[selectedModel] + '...';
     document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('draftPreview').style.display = 'none';
     document.getElementById('errorState').style.display = 'none';
@@ -156,7 +204,7 @@
       const response = await fetch('{% url "generate_draft" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ idea: idea }),
+        body: JSON.stringify({ idea: idea, model: selectedModel }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to generate draft.');
@@ -184,6 +232,12 @@
       .replace(/\n/g, '<br>');
     document.getElementById('draftContent').innerHTML = '<p>' + content + '</p>';
     document.getElementById('editDraftBtn').href = '/ai/blog-generator/draft/' + currentDraftId + '/';
+
+    const modelNames = { claude: '🤖 Claude', openai: '✨ OpenAI', auto: '⚡ Auto' };
+    const badge = document.getElementById('modelUsedBadge');
+    badge.textContent = modelNames[data.model_used || selectedModel] || selectedModel;
+    badge.className = 'model-used-badge model-' + (data.model_used || selectedModel);
+
     document.getElementById('draftPreview').style.display = 'block';
     document.getElementById('draftPreview').scrollIntoView({ behavior: 'smooth' });
   }

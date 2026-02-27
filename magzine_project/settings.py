@@ -96,6 +96,7 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
 
 # Session security
 SESSION_COOKIE_HTTPONLY = True
