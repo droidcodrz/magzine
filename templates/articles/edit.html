@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit: {{ article.title|truncatechars:40 }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 style="font-family:var(--font-serif);font-size:2rem;font-weight:800;">
+          <i class="bi bi-pencil me-2 text-gold"></i>Edit Article
+        </h1>
+        <div class="d-flex gap-2">
+          <a href="{% url 'article_detail' article.slug %}" class="btn btn-dark-secondary btn-sm">
+            <i class="bi bi-eye me-1"></i>Preview
+          </a>
+          <a href="{% url 'dashboard' %}" class="btn btn-dark-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Dashboard
+          </a>
+        </div>
+      </div>
+
+      <div class="card-dark p-4 p-lg-5">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label">Title <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+            <div class="text-danger" style="font-size:0.8rem;margin-top:0.25rem;">{{ form.title.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              {{ form.category }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status</label>
+              {{ form.status }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Tags</label>
+            {{ form.tags_input }}
+            <div class="form-text">Separate with commas</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Cover Image</label>
+            {% if article.cover_image %}
+            <div style="margin-bottom:0.75rem;">
+              <img src="{{ article.cover_image.url }}" alt="Current cover" style="height:100px;border-radius:var(--radius);object-fit:cover;">
+              <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;">Current cover image</div>
+            </div>
+            {% endif %}
+            {{ form.cover_image }}
+            <div class="form-text">Upload new image to replace current one. Max 5MB.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Excerpt</label>
+            {{ form.excerpt }}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Content <span class="text-danger">*</span></label>
+            {{ form.content }}
+          </div>
+
+          <div class="mb-4">
+            <div class="form-check">
+              {{ form.is_featured }}
+              <label class="form-check-label" for="{{ form.is_featured.id_for_label }}" style="color:var(--text-secondary);">
+                Mark as Featured
+              </label>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="d-flex gap-3 justify-content-between">
+            <form method="post" action="{% url 'article_delete' article.slug %}" class="confirm-delete">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);">
+                <i class="bi bi-trash me-1"></i>Delete
+              </button>
+            </form>
+            <div class="d-flex gap-2">
+              <a href="{% url 'article_detail' article.slug %}" class="btn btn-dark-secondary">Cancel</a>
+              <button type="submit" class="btn btn-gold">
+                <i class="bi bi-check-lg me-1"></i>Save Changes
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Page Not Found{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div>
+    <div style="font-family:var(--font-serif);font-size:8rem;font-weight:800;color:rgba(200,169,110,0.15);line-height:1;">404</div>
+    <h1 style="font-family:var(--font-serif);font-size:2rem;font-weight:700;margin-top:-1rem;">Page Not Found</h1>
+    <p style="color:var(--text-muted);max-width:400px;margin:1rem auto 2rem;">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="d-flex gap-3 justify-content-center">
+      <a href="{% url 'home' %}" class="btn btn-gold">Go Home</a>
+      <a href="{% url 'article_list' %}" class="btn btn-outline-gold">Browse Articles</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

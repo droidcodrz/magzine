@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block title %}Write Article{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-9">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 style="font-family:var(--font-serif);font-size:2rem;font-weight:800;">
+          <i class="bi bi-pencil-square me-2 text-gold"></i>Write New Article
+        </h1>
+        <a href="{% url 'dashboard' %}" class="btn btn-dark-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+      </div>
+
+      <div class="card-dark p-4 p-lg-5">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="mb-4">
+            <label class="form-label">Title <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}
+            <div class="text-danger" style="font-size:0.8rem;margin-top:0.25rem;">{{ form.title.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Category</label>
+              {{ form.category }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Status <span class="text-danger">*</span></label>
+              {{ form.status }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Tags</label>
+            {{ form.tags_input }}
+            <div class="form-text">Separate tags with commas. e.g., travel, culture, people</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Cover Image</label>
+            {{ form.cover_image }}
+            {% if form.cover_image.errors %}
+            <div class="text-danger" style="font-size:0.8rem;margin-top:0.25rem;">{{ form.cover_image.errors }}</div>
+            {% endif %}
+            <div class="form-text">Max 5MB. JPG, PNG, WebP accepted.</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Excerpt / Summary</label>
+            {{ form.excerpt }}
+            <div class="form-text">Brief summary shown in article listings (max 500 chars)</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">Content <span class="text-danger">*</span></label>
+            <div class="form-text mb-2">Use ## for headings, **bold**, *italic*, > for blockquotes</div>
+            {{ form.content }}
+            {% if form.content.errors %}
+            <div class="text-danger" style="font-size:0.8rem;margin-top:0.25rem;">{{ form.content.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-4">
+            <div class="form-check">
+              {{ form.is_featured }}
+              <label class="form-check-label" for="{{ form.is_featured.id_for_label }}" style="color:var(--text-secondary);">
+                Mark as Featured Article
+              </label>
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <div class="d-flex gap-3 justify-content-end">
+            <a href="{% url 'dashboard' %}" class="btn btn-dark-secondary">Cancel</a>
+            <button type="submit" name="status" class="btn btn-outline-gold">
+              <i class="bi bi-floppy me-1"></i>Save Draft
+            </button>
+            <button type="submit" class="btn btn-gold">
+              <i class="bi bi-send me-1"></i>Publish Article
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

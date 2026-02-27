@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-7">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--primary);margin-bottom:1rem;">
+          <i class="bi bi-stars me-1"></i>AI-Powered Magazine Platform
+        </div>
+        <h1 style="font-family:var(--font-serif);font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.15;margin-bottom:1.5rem;">
+          Stories That<br><span class="text-gold">Inspire,</span> Ideas<br>That Move You.
+        </h1>
+        <p style="font-size:1.1rem;color:var(--text-secondary);max-width:500px;margin-bottom:2rem;">
+          Discover compelling articles, generate AI-powered ideas, and craft your best stories with our intelligent writing tools.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{% url 'article_list' %}" class="btn btn-gold btn-lg">
+            <i class="bi bi-book me-2"></i>Read Articles
+          </a>
+          {% if user.is_authenticated %}
+          <a href="{% url 'idea_generator' %}" class="btn btn-outline-gold btn-lg">
+            <i class="bi bi-lightbulb me-2"></i>Generate Ideas
+          </a>
+          {% else %}
+          <a href="{% url 'register' %}" class="btn btn-outline-gold btn-lg">
+            <i class="bi bi-rocket me-2"></i>Get Started Free
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-5 d-none d-lg-block text-center">
+        <div style="font-size:12rem;opacity:0.06;font-family:var(--font-serif);font-weight:800;line-height:1;color:var(--primary);user-select:none;">M</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURED ARTICLES -->
+{% if featured_articles %}
+<section style="padding:4rem 0;">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Featured</h2>
+      <a href="{% url 'article_list' %}" class="btn btn-outline-gold btn-sm">View All</a>
+    </div>
+
+    <div class="row g-4">
+      {% for article in featured_articles %}
+      <div class="col-lg-{% if forloop.first %}8{% else %}4{% endif %} col-md-6">
+        <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none d-block h-100">
+          <div class="featured-card h-100">
+            {% if article.cover_image %}
+            <img src="{{ article.cover_image.url }}" alt="{{ article.title }}" class="featured-card-img">
+            {% else %}
+            <div class="featured-card-img" style="background:linear-gradient(135deg,var(--dark-tertiary),var(--border));position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:5rem;color:var(--text-muted);">
+              <i class="bi bi-image"></i>
+            </div>
+            {% endif %}
+            <div class="featured-card-overlay"></div>
+            <div class="featured-card-content">
+              {% if article.category %}
+              <div class="featured-card-category">{{ article.category.name }}</div>
+              {% endif %}
+              <h2 class="featured-card-title">{{ article.title }}</h2>
+              <div class="featured-card-meta">
+                <span><i class="bi bi-person me-1"></i>{{ article.author.get_full_name }}</span>
+                <span class="ms-3"><i class="bi bi-eye me-1"></i>{{ article.views }}</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- LATEST ARTICLES -->
+<section style="padding:2rem 0 4rem;">
+  <div class="container">
+    <div class="row g-4">
+      <!-- Articles Grid -->
+      <div class="col-lg-8">
+        <div class="section-header">
+          <h2 class="section-title">Latest Articles</h2>
+          <a href="{% url 'article_list' %}" class="btn btn-outline-gold btn-sm">All Articles</a>
+        </div>
+
+        {% if latest_articles %}
+        <div class="row g-4">
+          {% for article in latest_articles %}
+          <div class="col-md-6">
+            <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none d-block h-100">
+              <div class="article-card">
+                {% if article.cover_image %}
+                <img src="{{ article.cover_image.url }}" alt="{{ article.title }}" class="article-card-img">
+                {% else %}
+                <div class="article-card-img-placeholder">
+                  <i class="bi bi-image"></i>
+                </div>
+                {% endif %}
+                <div class="article-card-body">
+                  {% if article.category %}
+                  <div class="article-card-category">{{ article.category.name }}</div>
+                  {% endif %}
+                  <h3 class="article-card-title">{{ article.title }}</h3>
+                  <p class="article-card-excerpt">{{ article.excerpt|default:article.content|truncatechars:120 }}</p>
+                  <div class="article-card-meta">
+                    <span><i class="bi bi-person me-1"></i>{{ article.author.get_full_name }}</span>
+                    <span><i class="bi bi-clock me-1"></i>{{ article.published_at|date:"M d, Y"|default:"Draft" }}</span>
+                    <span class="ms-auto"><i class="bi bi-eye me-1"></i>{{ article.views }}</span>
+                  </div>
+                </div>
+              </div>
+            </a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+          <i class="bi bi-newspaper" style="font-size:4rem;color:var(--text-muted);"></i>
+          <p style="color:var(--text-muted);margin-top:1rem;">No articles yet. Be the first to write one!</p>
+          {% if user.is_authenticated %}
+          <a href="{% url 'article_create' %}" class="btn btn-gold mt-3">Write Article</a>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Sidebar -->
+      <div class="col-lg-4">
+        <!-- Categories -->
+        {% if categories %}
+        <div class="sidebar-card">
+          <h3 class="sidebar-title"><i class="bi bi-grid me-2 text-gold"></i>Categories</h3>
+          <div class="d-flex flex-column gap-2">
+            {% for category in categories %}
+            <a href="{% url 'article_list' %}?category={{ category.slug }}" class="d-flex align-items-center justify-content-between text-decoration-none" style="padding:0.5rem;border-radius:var(--radius);transition:var(--transition);" onmouseover="this.style.background='var(--dark-tertiary)'" onmouseout="this.style.background=''">
+              <span style="color:var(--text-secondary);font-size:0.875rem;">
+                {% if category.icon %}<i class="{{ category.icon }} me-2 text-gold"></i>{% endif %}
+                {{ category.name }}
+              </span>
+              <span style="font-size:0.75rem;color:var(--text-muted);">{{ category.articles.count }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Popular Articles -->
+        {% if popular_articles %}
+        <div class="sidebar-card">
+          <h3 class="sidebar-title"><i class="bi bi-fire me-2 text-gold"></i>Trending</h3>
+          <div class="d-flex flex-column gap-3">
+            {% for article in popular_articles %}
+            <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none d-flex gap-3 align-items-start" style="padding:0.5rem;border-radius:var(--radius);transition:var(--transition);" onmouseover="this.style.background='var(--dark-tertiary)'" onmouseout="this.style.background=''">
+              <span style="font-family:var(--font-serif);font-size:1.5rem;font-weight:800;color:var(--border);line-height:1;min-width:2rem;">{{ forloop.counter }}</span>
+              <div>
+                <div style="font-size:0.875rem;color:var(--text-primary);font-weight:600;line-height:1.4;" class="line-clamp-2">{{ article.title }}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem;"><i class="bi bi-eye me-1"></i>{{ article.views }} views</div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- AI Tools CTA -->
+        {% if user.is_authenticated %}
+        <div class="sidebar-card" style="background:linear-gradient(135deg,rgba(200,169,110,0.1),rgba(200,169,110,0.05));border-color:rgba(200,169,110,0.3);">
+          <div class="text-center">
+            <i class="bi bi-stars" style="font-size:2.5rem;color:var(--primary);"></i>
+            <h3 style="font-family:var(--font-serif);font-size:1.2rem;margin:0.75rem 0 0.5rem;">AI Writing Tools</h3>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Generate ideas and draft articles with Claude AI</p>
+            <div class="d-flex flex-column gap-2">
+              <a href="{% url 'idea_generator' %}" class="btn btn-gold btn-sm">
+                <i class="bi bi-lightbulb me-1"></i>Generate Ideas
+              </a>
+              <a href="{% url 'blog_generator' %}" class="btn btn-outline-gold btn-sm">
+                <i class="bi bi-robot me-1"></i>Draft an Article
+              </a>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <div class="sidebar-card" style="background:linear-gradient(135deg,rgba(200,169,110,0.1),rgba(200,169,110,0.05));border-color:rgba(200,169,110,0.3);">
+          <div class="text-center">
+            <i class="bi bi-stars" style="font-size:2.5rem;color:var(--primary);"></i>
+            <h3 style="font-family:var(--font-serif);font-size:1.2rem;margin:0.75rem 0 0.5rem;">Unlock AI Tools</h3>
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1.25rem;">Sign up to access our AI idea generator and blog draft creator</p>
+            <a href="{% url 'register' %}" class="btn btn-gold btn-sm">Get Started Free</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

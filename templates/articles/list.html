@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}Articles{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col-lg-8">
+      <h1 style="font-family:var(--font-serif);font-size:2.5rem;font-weight:800;">
+        {% if search_query %}Search: "{{ search_query }}"
+        {% elif selected_category %}{{ selected_category|title }}
+        {% else %}All Articles{% endif %}
+      </h1>
+      <p style="color:var(--text-muted);">{{ page_obj.paginator.count }} article{{ page_obj.paginator.count|pluralize }} found</p>
+    </div>
+    <div class="col-lg-4 d-flex align-items-start justify-content-lg-end">
+      <form method="get" class="d-flex gap-2">
+        <input type="search" name="q" class="form-control form-control-sm" placeholder="Search..." value="{{ search_query }}">
+        <button class="btn btn-gold btn-sm" type="submit"><i class="bi bi-search"></i></button>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-lg-9">
+      <!-- Category filter -->
+      <div class="d-flex flex-wrap gap-2 mb-4">
+        <a href="{% url 'article_list' %}" class="tag-chip {% if not selected_category %}border-gold text-gold{% endif %}">All</a>
+        {% for cat in categories %}
+        <a href="{% url 'article_list' %}?category={{ cat.slug }}" class="tag-chip {% if selected_category == cat.slug %}border-gold text-gold{% endif %}">
+          {{ cat.name }}
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- Articles Grid -->
+      {% if page_obj %}
+      <div class="row g-4">
+        {% for article in page_obj %}
+        <div class="col-md-6 col-xl-4">
+          <a href="{% url 'article_detail' article.slug %}" class="text-decoration-none d-block h-100">
+            <div class="article-card">
+              {% if article.cover_image %}
+              <img src="{{ article.cover_image.url }}" alt="{{ article.title }}" class="article-card-img">
+              {% else %}
+              <div class="article-card-img-placeholder"><i class="bi bi-image"></i></div>
+              {% endif %}
+              <div class="article-card-body">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  {% if article.category %}
+                  <span class="article-card-category">{{ article.category.name }}</span>
+                  {% endif %}
+                  {% if article.ai_generated %}
+                  <span class="badge-ai"><i class="bi bi-stars me-1"></i>AI</span>
+                  {% endif %}
+                </div>
+                <h3 class="article-card-title">{{ article.title }}</h3>
+                <p class="article-card-excerpt">{{ article.excerpt|default:article.content|truncatechars:110 }}</p>
+                <div class="article-card-meta">
+                  <span><i class="bi bi-person me-1"></i>{{ article.author.get_full_name }}</span>
+                  <span class="ms-auto"><i class="bi bi-eye me-1"></i>{{ article.views }}</span>
+                </div>
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      {% if page_obj.has_other_pages %}
+      <nav class="mt-5">
+        <ul class="pagination justify-content-center">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          {% endif %}
+          {% for num in page_obj.paginator.page_range %}
+          <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">{{ num }}</a>
+          </li>
+          {% endfor %}
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if selected_category %}&category={{ selected_category }}{% endif %}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-search" style="font-size:4rem;color:var(--text-muted);"></i>
+        <h3 style="font-family:var(--font-serif);margin-top:1rem;">No articles found</h3>
+        <p style="color:var(--text-muted);">Try a different search or browse all categories.</p>
+        <a href="{% url 'article_list' %}" class="btn btn-outline-gold mt-2">Browse All</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-3">
+      {% if user.is_authenticated %}
+      <div class="sidebar-card mb-3" style="background:linear-gradient(135deg,rgba(200,169,110,0.1),rgba(200,169,110,0.05));border-color:rgba(200,169,110,0.3);">
+        <div class="text-center">
+          <i class="bi bi-pencil-square" style="font-size:2rem;color:var(--primary);"></i>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin:0.5rem 0 1rem;">Share your story with the world</p>
+          <a href="{% url 'article_create' %}" class="btn btn-gold btn-sm w-100">Write Article</a>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="sidebar-card">
+        <h3 class="sidebar-title">Categories</h3>
+        <div class="tag-cloud">
+          {% for cat in categories %}
+          <a href="{% url 'article_list' %}?category={{ cat.slug }}" class="tag-chip">{{ cat.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Draft{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+          <h1 style="font-family:var(--font-serif);font-size:2rem;font-weight:800;">
+            <i class="bi bi-pencil-square me-2 text-gold"></i>Edit Draft
+          </h1>
+          <p style="color:var(--text-muted);margin:0;font-size:0.875rem;">
+            <i class="bi bi-stars me-1 text-gold"></i>AI-generated draft &mdash; Edit freely before publishing
+          </p>
+        </div>
+        <a href="{% url 'blog_generator' %}" class="btn btn-dark-secondary btn-sm">
+          <i class="bi bi-arrow-left me-1"></i>Back to Drafts
+        </a>
+      </div>
+
+      <!-- Original Idea -->
+      <div style="background:rgba(200,169,110,0.08);border:1px solid rgba(200,169,110,0.2);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:2rem;">
+        <div style="font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary);margin-bottom:0.25rem;">Original Idea</div>
+        <div style="font-size:0.9rem;color:var(--text-secondary);">{{ draft.idea }}</div>
+      </div>
+
+      <div class="card-dark p-4 p-lg-5">
+        <form method="post" id="draftForm">
+          {% csrf_token %}
+
+          <!-- Title -->
+          <div class="mb-4">
+            <label class="form-label" style="font-size:0.875rem;font-weight:600;">Article Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" value="{{ draft.title }}" placeholder="Article title" required style="font-family:var(--font-serif);font-size:1.25rem;font-weight:700;">
+          </div>
+
+          <!-- Excerpt -->
+          <div class="mb-4">
+            <label class="form-label" style="font-size:0.875rem;font-weight:600;">Excerpt / Summary</label>
+            <textarea name="excerpt" class="form-control" rows="2" placeholder="A brief summary for article listings (max 500 chars)" maxlength="500"></textarea>
+          </div>
+
+          <!-- Content Editor -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label mb-0" style="font-size:0.875rem;font-weight:600;">Content <span class="text-danger">*</span></label>
+              <div class="d-flex gap-2">
+                <button type="button" class="btn btn-sm btn-dark-secondary" onclick="togglePreview()" id="previewBtn">
+                  <i class="bi bi-eye me-1"></i>Preview
+                </button>
+              </div>
+            </div>
+            <div class="form-text mb-2">Use ## for headings, **bold**, *italic*, > for blockquotes</div>
+            <textarea name="content" id="contentEditor" class="form-control article-editor" required>{{ draft.edited_content|default:draft.generated_content }}</textarea>
+            <div id="contentPreview" class="article-content" style="display:none;background:var(--dark-tertiary);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;min-height:400px;"></div>
+          </div>
+
+          <!-- Publish Options -->
+          <div style="background:var(--dark-tertiary);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;" id="publishOptions" style="display:none;">
+            <h3 style="font-family:var(--font-serif);font-size:1.1rem;margin-bottom:1rem;">Publish Settings</h3>
+            <div class="mb-3">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-select">
+                <option value="">No Category</option>
+                {% for category in categories %}
+                <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <hr class="divider">
+          <div class="d-flex gap-3 justify-content-between flex-wrap">
+            <form method="post" action="{% url 'delete_draft' draft.id %}" class="confirm-delete">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);">
+                <i class="bi bi-trash me-1"></i>Delete Draft
+              </button>
+            </form>
+            <div class="d-flex gap-2 flex-wrap">
+              <button type="submit" name="action" value="save" form="draftForm" class="btn btn-outline-gold">
+                <i class="bi bi-floppy me-1"></i>Save Draft
+              </button>
+              <button type="button" class="btn btn-gold btn-lg" onclick="showPublishOptions()">
+                <i class="bi bi-send me-1"></i>Publish as Article
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Publish Modal -->
+<div class="modal fade" id="publishModal" tabindex="-1">
+  <div class="modal-dialog" style="max-width:500px;">
+    <div class="modal-content" style="background:var(--card-bg);border:1px solid var(--border);">
+      <div class="modal-header" style="border-color:var(--border);">
+        <h5 class="modal-title" style="font-family:var(--font-serif);">Publish as Article</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" style="filter:invert(1);"></button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-secondary);font-size:0.875rem;">
+          This will create a new article from your draft. You can continue editing before publishing.
+        </p>
+        <div class="mb-3">
+          <label class="form-label">Category</label>
+          <select name="category" id="publishCategory" class="form-select">
+            <option value="">No Category</option>
+            {% for category in categories %}
+            <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer" style="border-color:var(--border);">
+        <button type="button" class="btn btn-dark-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="submitPublish()">
+          <i class="bi bi-send me-1"></i>Create Article Draft
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  let isPreviewMode = false;
+
+  function togglePreview() {
+    const editor = document.getElementById('contentEditor');
+    const preview = document.getElementById('contentPreview');
+    const btn = document.getElementById('previewBtn');
+
+    isPreviewMode = !isPreviewMode;
+
+    if (isPreviewMode) {
+      let content = editor.value
+        .replace(/## (.*?)$/gm, '<h2>$1</h2>')
+        .replace(/### (.*?)$/gm, '<h3>$1</h3>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      content = '<p>' + content + '</p>';
+
+      preview.innerHTML = content;
+      editor.style.display = 'none';
+      preview.style.display = 'block';
+      btn.innerHTML = '<i class="bi bi-code me-1"></i>Edit';
+    } else {
+      editor.style.display = 'block';
+      preview.style.display = 'none';
+      btn.innerHTML = '<i class="bi bi-eye me-1"></i>Preview';
+    }
+  }
+
+  function showPublishOptions() {
+    const modal = new bootstrap.Modal(document.getElementById('publishModal'));
+    modal.show();
+  }
+
+  function submitPublish() {
+    const categoryId = document.getElementById('publishCategory').value;
+    const categoryInput = document.createElement('input');
+    categoryInput.type = 'hidden';
+    categoryInput.name = 'category';
+    categoryInput.value = categoryId;
+
+    const actionInput = document.createElement('input');
+    actionInput.type = 'hidden';
+    actionInput.name = 'action';
+    actionInput.value = 'publish';
+
+    const form = document.getElementById('draftForm');
+    form.appendChild(categoryInput);
+    form.appendChild(actionInput);
+    form.submit();
+  }
+</script>
+{% endblock %}
