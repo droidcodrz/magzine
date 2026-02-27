@@ -11,8 +11,8 @@
       <i class="bi bi-pencil-square"></i>
     </div>
     <div>
-      <h1 class="page-header-title">AI Blog Draft Generator</h1>
-      <p class="page-header-sub">Describe your article idea and let AI write a full draft you can edit and publish.</p>
+      <div class="page-header-title">AI Blog Draft Generator</div>
+      <div class="page-header-sub">Describe your article idea and let AI write a full draft you can edit and publish.</div>
     </div>
   </div>
 
@@ -22,7 +22,7 @@
     <div class="generator-main">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">Your Article Idea</h2>
+          <div class="dash-card-title">Your Article Idea</div>
           <span class="dash-card-subtitle" id="charCountLabel">0 / 1000 characters</span>
         </div>
 
@@ -31,7 +31,6 @@
             placeholder="e.g. 'Write an article about how remote work has changed urban planning in major cities, focusing on the decline of office districts and the rise of mixed-use neighbourhoods...'"></textarea>
         </div>
 
-        <!-- Model Selector + Generate Button -->
         <div style="padding:1.25rem 1.5rem;">
           <label class="gen-label" style="margin-bottom:0.5rem;">AI Model</label>
           <div class="model-selector-row">
@@ -49,17 +48,19 @@
                 <span class="model-btn-sub">GPT-4o</span>
               </button>
               <button type="button" class="model-btn" data-model="auto"
-                title="Auto — Picks the best model for each task automatically">
+                title="Auto — Picks the best model automatically">
                 <span class="model-btn-icon">⚡</span>
                 <span class="model-btn-label">Auto</span>
                 <span class="model-btn-sub">Best fit</span>
               </button>
             </div>
             <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateDraft()">
-              <i class="bi bi-stars"></i> Generate Draft
+              <i class="bi bi-stars"></i> Generate Blog Post
             </button>
           </div>
-          <p class="gen-hint" style="padding:0;margin-top:0.6rem;"><i class="bi bi-info-circle me-1"></i>Generation takes 15–30 seconds · Powered by Anthropic &amp; OpenAI</p>
+          <p class="gen-hint" style="margin-top:0.6rem;">
+            <i class="bi bi-info-circle me-1"></i>Generation takes 15–30 seconds · Powered by Anthropic &amp; OpenAI
+          </p>
         </div>
       </div>
 
@@ -77,9 +78,9 @@
 
       <!-- Draft Preview -->
       <div id="draftPreview" style="display:none;">
-        <div class="dash-card mt-4">
+        <div class="dash-card">
           <div class="dash-card-header">
-            <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Generated Draft</h2>
+            <div class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Generated Draft</div>
             <div style="display:flex;align-items:center;gap:0.5rem;">
               <span id="modelUsedBadge" class="model-used-badge"></span>
               <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateDraft()">
@@ -107,9 +108,9 @@
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">
+          <div class="dash-card-title">
             {% if is_admin %}All Drafts{% else %}My Recent Drafts{% endif %}
-          </h2>
+          </div>
           <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
 
@@ -119,7 +120,7 @@
             <div class="history-item-title">
               <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:44 }}</a>
             </div>
-            <div class="d-flex align-items-center justify-content-between mt-1" style="gap:0.5rem;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-top:0.3rem;">
               <div style="display:flex;align-items:center;gap:0.4rem;">
                 <span class="history-item-date">{{ draft.created_at|date:"M d" }}</span>
                 {% if draft.ai_model_used %}
@@ -129,7 +130,7 @@
               <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
             </div>
             {% if is_admin and draft.user != request.user %}
-            <div class="history-item-date" style="color:#9333EA;">by {{ draft.user.get_full_name }}</div>
+            <div class="history-item-date" style="color:#9333EA;margin-top:0.2rem;">by {{ draft.user.get_full_name }}</div>
             {% endif %}
           </div>
           {% endfor %}
@@ -141,8 +142,8 @@
         {% endif %}
       </div>
 
-      <div class="dash-card mt-3 tip-card">
-        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Model Guide</h3>
+      <div class="dash-card tip-card">
+        <div class="tip-title"><i class="bi bi-info-circle-fill me-2" style="color:#4F46E5;"></i>Model Guide</div>
         <ul class="tip-list">
           <li><strong>Claude</strong> — Best for creative, long-form magazine writing</li>
           <li><strong>OpenAI GPT-4o</strong> — Great for structured, research-based articles</li>
@@ -159,7 +160,6 @@
   let currentDraftId = null;
   let selectedModel = 'claude';
 
-  // Pre-fill from idea generator
   window.addEventListener('load', function() {
     const savedIdea = sessionStorage.getItem('ai_idea');
     if (savedIdea) {
@@ -169,7 +169,6 @@
     }
   });
 
-  // Model selector
   document.querySelectorAll('.model-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
@@ -213,7 +212,7 @@
     } catch (err) {
       const errEl = document.getElementById('errorState');
       errEl.textContent = err.message;
-      errEl.style.display = 'block';
+      errEl.style.display = 'flex';
     } finally {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('generateBtn').disabled = false;

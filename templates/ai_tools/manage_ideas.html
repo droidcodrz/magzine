@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="dash-page">
+
   <div class="dash-welcome">
     <div>
       <h1 class="dash-welcome-title">Manage Ideas</h1>
@@ -25,32 +26,44 @@
           <tr>
             <th>#</th>
             {% if is_admin %}<th>User</th>{% endif %}
-            <th>Topics <span style="font-weight:400;color:#94A3B8;">(click to reuse)</span></th>
-            <th>Model</th>
+            <th>Category / Topics</th>
+            <th>Created Date</th>
             <th>Ideas</th>
-            <th>Context</th>
-            <th>Date</th>
+            <th>Model</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for req in idea_requests %}
           <tr>
             <td class="dash-table-muted">{{ forloop.counter }}</td>
+
             {% if is_admin %}
             <td>
-              <div style="font-size:0.825rem;font-weight:600;color:#1E293B;">{{ req.user.get_full_name }}</div>
+              <div style="font-size:0.825rem;font-weight:600;color:#111827;">{{ req.user.get_full_name }}</div>
               <div class="dash-table-muted" style="font-size:0.72rem;">{{ req.user.email }}</div>
             </td>
             {% endif %}
+
             <td>
               <div class="tag-wrap">
                 {% for topic in req.topics %}
-                <a href="{% url 'idea_generator' %}?topics={{ topic }}" class="dash-tag clickable-tag" title="Click to generate ideas on '{{ topic }}'">
-                  {{ topic }}
-                </a>
+                <a href="{% url 'idea_generator' %}?topics={{ topic }}"
+                  class="dash-tag clickable-tag"
+                  title="Generate ideas on '{{ topic }}'">{{ topic }}</a>
                 {% endfor %}
               </div>
             </td>
+
+            <td class="dash-table-muted" style="white-space:nowrap;">{{ req.created_at|date:"M d, Y" }}</td>
+
+            <td class="dash-table-muted">
+              {% if req.generated_ideas %}
+                <span style="font-weight:600;color:#111827;">{{ req.generated_ideas|length }}</span>
+                idea{{ req.generated_ideas|length|pluralize }}
+              {% else %}—{% endif %}
+            </td>
+
             <td>
               {% if req.ai_model_used %}
                 <span class="model-mini-badge model-{{ req.ai_model_used }}">{{ req.ai_model_used|upper }}</span>
@@ -58,16 +71,12 @@
                 <span class="dash-table-muted">—</span>
               {% endif %}
             </td>
-            <td class="dash-table-muted">
-              {% if req.generated_ideas %}
-                {{ req.generated_ideas|length }} idea{{ req.generated_ideas|length|pluralize }}
-              {% else %}—{% endif %}
+
+            <td>
+              <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-outline dash-btn-sm">
+                <i class="bi bi-pencil-square"></i> Create Blog
+              </a>
             </td>
-            <td class="dash-table-muted">
-              {% if req.additional_context %}{{ req.additional_context|truncatechars:55 }}
-              {% else %}<span style="color:#cbd5e1;">None</span>{% endif %}
-            </td>
-            <td class="dash-table-muted" style="white-space:nowrap;">{{ req.created_at|date:"M d, Y" }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -83,5 +92,6 @@
     </div>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

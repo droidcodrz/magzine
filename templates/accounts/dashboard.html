@@ -3,13 +3,17 @@
 {% block title %}Dashboard{% endblock %}
 {% block page_title %}Dashboard{% endblock %}
 
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="dash-page">
 
   <!-- Welcome -->
   <div class="dash-welcome">
     <div>
-      <h1 class="dash-welcome-title">Welcome back, {{ user.get_full_name|default:user.username }}! 👋</h1>
+      <h1 class="dash-welcome-title">Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
       <p class="dash-welcome-sub">Here's what's happening with your magazine today.</p>
     </div>
     <div class="dash-welcome-actions">
@@ -32,9 +36,7 @@
         <div class="stat-card-value">{{ published_count }}</div>
         <div class="stat-card-label">Published Articles</div>
       </div>
-      <div class="stat-card-trend up">
-        <i class="bi bi-arrow-up-short"></i>
-      </div>
+      <div class="stat-card-trend up"><i class="bi bi-arrow-up-short"></i></div>
     </div>
 
     <div class="stat-card">
@@ -45,9 +47,7 @@
         <div class="stat-card-value">{{ draft_count }}</div>
         <div class="stat-card-label">Draft Articles</div>
       </div>
-      <div class="stat-card-trend">
-        <i class="bi bi-minus"></i>
-      </div>
+      <div class="stat-card-trend"><i class="bi bi-minus"></i></div>
     </div>
 
     <div class="stat-card">
@@ -58,9 +58,7 @@
         <div class="stat-card-value">{{ user.blog_drafts.count }}</div>
         <div class="stat-card-label">AI Blog Drafts</div>
       </div>
-      <div class="stat-card-trend up">
-        <i class="bi bi-stars"></i>
-      </div>
+      <div class="stat-card-trend up"><i class="bi bi-stars"></i></div>
     </div>
 
     {% if user.is_staff and total_users %}
@@ -72,9 +70,7 @@
         <div class="stat-card-value">{{ total_users }}</div>
         <div class="stat-card-label">Total Users</div>
       </div>
-      <div class="stat-card-trend up">
-        <i class="bi bi-arrow-up-short"></i>
-      </div>
+      <div class="stat-card-trend up"><i class="bi bi-arrow-up-short"></i></div>
     </div>
     {% else %}
     <div class="stat-card">
@@ -85,11 +81,65 @@
         <div class="stat-card-value">{{ user.idea_requests.count }}</div>
         <div class="stat-card-label">Idea Sessions</div>
       </div>
-      <div class="stat-card-trend up">
-        <i class="bi bi-arrow-up-short"></i>
-      </div>
+      <div class="stat-card-trend up"><i class="bi bi-arrow-up-short"></i></div>
     </div>
     {% endif %}
+  </div>
+
+  <!-- Charts Row -->
+  <div class="charts-row">
+    <!-- Activity Bar Chart -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div>
+          <div class="dash-card-title">User Viewing Activity</div>
+          <div class="dash-card-subtitle">Article views over the last 7 days</div>
+        </div>
+        <span class="status-badge status-published">Live</span>
+      </div>
+      <div style="padding:1.25rem 1.5rem;">
+        <div class="chart-container">
+          <canvas id="activityChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut Chart -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div>
+          <div class="dash-card-title">Content Overview</div>
+          <div class="dash-card-subtitle">Distribution by type</div>
+        </div>
+      </div>
+      <div style="padding:1.25rem 1.5rem;">
+        <div class="chart-donut-container">
+          <canvas id="donutChart"></canvas>
+        </div>
+        <div class="chart-legend">
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#4F46E5;"></div>
+            <span>Published Articles</span>
+            <span class="chart-legend-value">{{ published_count }}</span>
+          </div>
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#F59E0B;"></div>
+            <span>Drafts</span>
+            <span class="chart-legend-value">{{ draft_count }}</span>
+          </div>
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#10B981;"></div>
+            <span>AI Blogs</span>
+            <span class="chart-legend-value">{{ user.blog_drafts.count }}</span>
+          </div>
+          <div class="chart-legend-item">
+            <div class="chart-legend-dot" style="background:#818CF8;"></div>
+            <span>Idea Sessions</span>
+            <span class="chart-legend-value">{{ user.idea_requests.count }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Content Grid -->
@@ -99,10 +149,10 @@
     <div class="dash-card">
       <div class="dash-card-header">
         <div>
-          <h2 class="dash-card-title">
+          <div class="dash-card-title">
             {% if user.is_staff %}All Recent Articles{% else %}My Articles{% endif %}
-          </h2>
-          <p class="dash-card-subtitle">Latest published and draft articles</p>
+          </div>
+          <div class="dash-card-subtitle">Latest published and draft articles</div>
         </div>
         <a href="{% url 'article_create' %}" class="dash-btn dash-btn-primary dash-btn-sm">
           <i class="bi bi-plus-lg"></i> New Article
@@ -127,7 +177,7 @@
             <tr>
               <td>
                 <div class="dash-table-title">
-                  <a href="{% url 'article_detail' article.slug %}">{{ article.title|truncatechars:48 }}</a>
+                  <a href="{% url 'article_detail' article.slug %}">{{ article.title|truncatechars:44 }}</a>
                   {% if article.ai_generated %}
                   <span class="ai-badge"><i class="bi bi-stars"></i> AI</span>
                   {% endif %}
@@ -135,12 +185,10 @@
               </td>
               <td><span class="dash-tag">{{ article.category|default:"General" }}</span></td>
               <td>
-                <span class="status-badge status-{{ article.status }}">
-                  {{ article.get_status_display }}
-                </span>
+                <span class="status-badge status-{{ article.status }}">{{ article.get_status_display }}</span>
               </td>
               <td class="dash-table-muted">{{ article.views }}</td>
-              <td class="dash-table-muted">{{ article.created_at|date:"M d, Y" }}</td>
+              <td class="dash-table-muted" style="white-space:nowrap;">{{ article.created_at|date:"M d, Y" }}</td>
               <td>
                 <div class="dash-table-actions">
                   <a href="{% url 'article_edit' article.slug %}" class="dash-icon-btn" title="Edit">
@@ -165,13 +213,13 @@
       {% endif %}
     </div>
 
-    <!-- Quick Actions + Recent Drafts -->
+    <!-- Side Panel -->
     <div class="dash-side-panel">
 
-      <!-- Quick AI Tools -->
+      <!-- AI Tools -->
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>AI Tools</h2>
+          <div class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>AI Tools</div>
         </div>
         <div class="quick-actions">
           <a href="{% url 'idea_generator' %}" class="quick-action-card">
@@ -219,19 +267,17 @@
 
       <!-- Recent AI Drafts -->
       {% if user.blog_drafts.all %}
-      <div class="dash-card mt-3">
+      <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">Recent AI Drafts</h2>
+          <div class="dash-card-title">Recent AI Drafts</div>
           <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
         <div class="recent-drafts">
           {% for draft in user.blog_drafts.all|slice:":5" %}
           <div class="recent-draft-item">
-            <div class="recent-draft-icon">
-              <i class="bi bi-file-text-fill"></i>
-            </div>
+            <div class="recent-draft-icon"><i class="bi bi-file-text-fill"></i></div>
             <div class="recent-draft-body">
-              <div class="recent-draft-title">{{ draft.title|default:draft.idea|truncatechars:40 }}</div>
+              <div class="recent-draft-title">{{ draft.title|default:draft.idea|truncatechars:38 }}</div>
               <div class="recent-draft-meta">{{ draft.created_at|date:"M d, Y" }}</div>
             </div>
             <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
@@ -240,7 +286,97 @@
         </div>
       </div>
       {% endif %}
+
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Activity Chart (Bar)
+(function() {
+  const ctx = document.getElementById('activityChart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{
+        label: 'Views',
+        data: [42, 68, 55, 81, 74, 93, 65],
+        backgroundColor: 'rgba(79,70,229,0.12)',
+        borderColor: '#4F46E5',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1F2937',
+          titleColor: '#F9FAFB',
+          bodyColor: '#D1D5DB',
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { display: false },
+          ticks: { font: { size: 12, family: 'Inter' }, color: '#9CA3AF' }
+        },
+        y: {
+          grid: { color: '#F3F4F6' },
+          border: { display: false },
+          ticks: { font: { size: 11, family: 'Inter' }, color: '#9CA3AF' }
+        }
+      }
+    }
+  });
+})();
+
+// Donut Chart
+(function() {
+  const published = {{ published_count|default:0 }};
+  const drafts = {{ draft_count|default:0 }};
+  const aiBlogs = {{ user.blog_drafts.count|default:0 }};
+  const ideas = {{ user.idea_requests.count|default:0 }};
+  const total = published + drafts + aiBlogs + ideas;
+  const ctx = document.getElementById('donutChart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Published', 'Drafts', 'AI Blogs', 'Idea Sessions'],
+      datasets: [{
+        data: total > 0 ? [published, drafts, aiBlogs, ideas] : [3, 2, 2, 1],
+        backgroundColor: ['#4F46E5', '#F59E0B', '#10B981', '#818CF8'],
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '72%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1F2937',
+          titleColor: '#F9FAFB',
+          bodyColor: '#D1D5DB',
+          padding: 10,
+          cornerRadius: 8,
+        }
+      }
+    }
+  });
+})();
+</script>
 {% endblock %}

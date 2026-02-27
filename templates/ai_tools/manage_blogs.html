@@ -5,6 +5,7 @@
 
 {% block content %}
 <div class="dash-page">
+
   <div class="dash-welcome">
     <div>
       <h1 class="dash-welcome-title">Manage Blogs</h1>
@@ -25,12 +26,11 @@
           <tr>
             <th>#</th>
             {% if is_admin %}<th>Author</th>{% endif %}
-            <th>Title / Idea</th>
+            <th>Blog Title / Idea</th>
             <th>Model</th>
-            <th>Image</th>
             <th>Status</th>
             <th>Linked Article</th>
-            <th>Created</th>
+            <th>Publish Date</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -38,21 +38,24 @@
           {% for draft in drafts %}
           <tr>
             <td class="dash-table-muted">{{ forloop.counter }}</td>
+
             {% if is_admin %}
             <td>
-              <div style="font-size:0.825rem;font-weight:600;color:#1E293B;">{{ draft.user.get_full_name }}</div>
+              <div style="font-size:0.825rem;font-weight:600;color:#111827;">{{ draft.user.get_full_name }}</div>
               <div class="dash-table-muted" style="font-size:0.72rem;">{{ draft.user.email }}</div>
             </td>
             {% endif %}
+
             <td>
               <div class="dash-table-title">
                 <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:50 }}</a>
                 <span class="ai-badge"><i class="bi bi-stars"></i> AI</span>
               </div>
               {% if draft.idea %}
-              <div class="dash-table-sub">{{ draft.idea|truncatechars:70 }}</div>
+              <div class="dash-table-sub">{{ draft.idea|truncatechars:65 }}</div>
               {% endif %}
             </td>
+
             <td>
               {% if draft.ai_model_used %}
                 <span class="model-mini-badge model-{{ draft.ai_model_used }}">{{ draft.ai_model_used|upper }}</span>
@@ -60,17 +63,11 @@
                 <span class="dash-table-muted">—</span>
               {% endif %}
             </td>
-            <td>
-              {% if draft.featured_image %}
-                <img src="{{ draft.featured_image.url }}" alt="cover"
-                  style="width:48px;height:36px;object-fit:cover;border-radius:6px;border:1px solid #E2E8F0;">
-              {% else %}
-                <span class="dash-table-muted">—</span>
-              {% endif %}
-            </td>
+
             <td>
               <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
             </td>
+
             <td>
               {% if draft.linked_article %}
               <a href="{% url 'article_detail' draft.linked_article.slug %}" class="dash-link">
@@ -80,7 +77,9 @@
               <span class="dash-table-muted">—</span>
               {% endif %}
             </td>
+
             <td class="dash-table-muted" style="white-space:nowrap;">{{ draft.created_at|date:"M d, Y" }}</td>
+
             <td>
               <div class="dash-table-actions">
                 <a href="{% url 'edit_draft' draft.id %}" class="dash-icon-btn" title="Edit">
@@ -110,5 +109,6 @@
     </div>
     {% endif %}
   </div>
+
 </div>
 {% endblock %}

@@ -11,16 +11,18 @@
       <i class="bi bi-lightbulb-fill"></i>
     </div>
     <div>
-      <h1 class="page-header-title">AI Idea Generator</h1>
-      <p class="page-header-sub">Select topics and let AI generate compelling magazine article ideas for you.</p>
+      <div class="page-header-title">AI Idea Generator</div>
+      <div class="page-header-sub">Select topics and let AI generate compelling magazine article ideas for you.</div>
     </div>
   </div>
 
   <div class="generator-layout">
+
+    <!-- Left: Form -->
     <div class="generator-main">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">1. Choose Topics</h2>
+          <div class="dash-card-title">1. Choose Topics</div>
           <span class="dash-card-subtitle">Select up to 8 topic areas</span>
         </div>
 
@@ -45,19 +47,19 @@
             <div class="model-selector" id="modelSelector">
               <button type="button" class="model-btn active" data-model="claude"
                 title="Claude Sonnet 4.6 - Creative, nuanced ideas">
-                <span class="model-btn-icon">&#x1F916;</span>
+                <span class="model-btn-icon">🤖</span>
                 <span class="model-btn-label">Claude</span>
                 <span class="model-btn-sub">Sonnet 4.6</span>
               </button>
               <button type="button" class="model-btn" data-model="openai"
                 title="GPT-4o - Broad, research-driven ideas">
-                <span class="model-btn-icon">&#x2728;</span>
+                <span class="model-btn-icon">✨</span>
                 <span class="model-btn-label">OpenAI</span>
                 <span class="model-btn-sub">GPT-4o</span>
               </button>
               <button type="button" class="model-btn" data-model="auto"
                 title="Auto - Picks the best model based on topics">
-                <span class="model-btn-icon">&#x26A1;</span>
+                <span class="model-btn-icon">⚡</span>
                 <span class="model-btn-label">Auto</span>
                 <span class="model-btn-sub">Best fit</span>
               </button>
@@ -67,7 +69,9 @@
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:1rem;margin-top:0.6rem;flex-wrap:wrap;">
-            <p class="gen-hint" style="padding:0;margin:0;"><i class="bi bi-info-circle me-1"></i>Generates 8 article ideas</p>
+            <p class="gen-hint" style="padding:0;margin:0;">
+              <i class="bi bi-info-circle me-1"></i>Generates 8 article ideas
+            </p>
             <a href="{% url 'manage_ideas' %}" class="dash-link" style="font-size:0.78rem;">
               <i class="bi bi-collection me-1"></i>View history
             </a>
@@ -86,9 +90,9 @@
       <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:1rem;"></div>
 
       <div id="ideasResults" style="display:none;">
-        <div class="dash-card mt-4">
+        <div class="dash-card">
           <div class="dash-card-header">
-            <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>Generated Ideas</h2>
+            <div class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>Generated Ideas</div>
             <div style="display:flex;align-items:center;gap:0.5rem;">
               <span id="modelUsedBadge" class="model-used-badge"></span>
               <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateIdeas()">
@@ -111,12 +115,13 @@
       </div>
     </div>
 
+    <!-- Right: Sidebar -->
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
-          <h2 class="dash-card-title">
+          <div class="dash-card-title">
             {% if is_admin %}All Sessions{% else %}Recent Sessions{% endif %}
-          </h2>
+          </div>
           <a href="{% url 'manage_ideas' %}" class="dash-link">View all</a>
         </div>
         {% if recent_requests %}
@@ -130,7 +135,8 @@
             </div>
             <div class="history-item-topics" style="margin-top:0.35rem;">
               {% for topic in req.topics %}
-              <span class="dash-tag clickable-tag" data-topic="{{ topic }}" onclick="quickSelectTopic('{{ topic }}')">{{ topic }}</span>
+              <span class="dash-tag clickable-tag" data-topic="{{ topic }}"
+                onclick="quickSelectTopic('{{ topic }}')">{{ topic }}</span>
               {% endfor %}
             </div>
             {% if is_admin and req.user != request.user %}
@@ -146,8 +152,8 @@
         {% endif %}
       </div>
 
-      <div class="dash-card mt-3 tip-card">
-        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Tips</h3>
+      <div class="dash-card tip-card">
+        <div class="tip-title"><i class="bi bi-info-circle-fill me-2" style="color:#4F46E5;"></i>Tips</div>
         <ul class="tip-list">
           <li>Select multiple topics for cross-topic ideas</li>
           <li><strong>Click any tag</strong> in history to re-select that topic</li>
@@ -236,7 +242,7 @@
     } catch (err) {
       const errEl = document.getElementById('errorState');
       errEl.textContent = err.message;
-      errEl.style.display = 'block';
+      errEl.style.display = 'flex';
     } finally {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('generateBtn').disabled = false;
@@ -264,7 +270,7 @@
     document.querySelectorAll('.idea-result-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
     sessionStorage.setItem('ai_idea', title + ': ' + description);
-    document.getElementById('useIdeaSection').style.display = 'block';
+    document.getElementById('useIdeaSection').style.display = 'flex';
     document.getElementById('useIdeaSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 

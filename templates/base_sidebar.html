@@ -139,17 +139,50 @@
           <span class="breadcrumb-page">{% block page_title %}Dashboard{% endblock %}</span>
         </div>
       </div>
+      <div class="topbar-search">
+        <i class="bi bi-search"></i>
+        <input type="text" placeholder="Search articles, ideas..." autocomplete="off">
+      </div>
+
       <div class="topbar-right">
-        <a href="{% url 'home' %}" class="topbar-btn" title="View Site">
+        <a href="{% url 'idea_generator' %}" class="topbar-action-btn">
+          <i class="bi bi-lightbulb"></i>
+          <span>Generate a Idea</span>
+        </a>
+        <a href="{% url 'blog_generator' %}" class="topbar-action-btn primary">
+          <i class="bi bi-pencil-square"></i>
+          <span>Generate Blog Post</span>
+        </a>
+        <div class="topbar-divider"></div>
+        <a href="{% url 'home' %}" class="topbar-icon-btn" title="View Site">
           <i class="bi bi-globe"></i>
         </a>
-        <a href="{% url 'article_create' %}" class="topbar-btn" title="New Article">
-          <i class="bi bi-plus-lg"></i>
-        </a>
-        <div class="topbar-user">
-          <div class="topbar-avatar">
+        <div class="dropdown">
+          <div class="topbar-avatar" data-bs-toggle="dropdown" style="cursor:pointer;">
             {{ user.get_full_name|slice:":1"|upper|default:user.username|slice:":1"|upper }}
           </div>
+          <ul class="dropdown-menu dropdown-menu-end" style="min-width:200px;margin-top:0.5rem;">
+            <li>
+              <div style="padding:0.75rem 1rem 0.5rem;">
+                <div style="font-size:0.85rem;font-weight:700;color:#111827;">{{ user.get_full_name|default:user.username }}</div>
+                <div style="font-size:0.75rem;color:#9CA3AF;">{{ user.email }}</div>
+              </div>
+            </li>
+            <li><hr class="dropdown-divider" style="margin:0.25rem 0;"></li>
+            <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="bi bi-person me-2"></i>Profile</a></li>
+            {% if user.is_staff %}
+            <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="bi bi-shield-check me-2"></i>Admin Panel</a></li>
+            {% endif %}
+            <li><hr class="dropdown-divider" style="margin:0.25rem 0;"></li>
+            <li>
+              <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">
+                  <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+                </button>
+              </form>
+            </li>
+          </ul>
         </div>
       </div>
     </header>
