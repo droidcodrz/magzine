@@ -1,0 +1,2 @@
+# magzine
+Magzine Website
