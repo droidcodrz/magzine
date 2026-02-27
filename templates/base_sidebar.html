@@ -70,6 +70,14 @@
             <span>Manage Idea</span>
           </a>
         </li>
+        {% if user.is_staff %}
+        <li class="sidebar-nav-item">
+          <a href="{% url 'trending_ideas' %}" class="sidebar-nav-link {% if request.resolver_match.url_name == 'trending_ideas' %}active{% endif %}">
+            <i class="bi bi-fire"></i>
+            <span>Trending Ideas</span>
+          </a>
+        </li>
+        {% endif %}
 
         <li class="sidebar-nav-section">Articles</li>
 

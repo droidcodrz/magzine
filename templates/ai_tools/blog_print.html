@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ draft.title|default:"Blog Post" }}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 11pt;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #fff;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+    }
+    .meta {
+      font-family: 'Arial', sans-serif;
+      font-size: 9pt;
+      color: #666;
+      border-bottom: 2px solid #1a1a1a;
+      padding-bottom: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .meta-row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+    h1 {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 0.5rem;
+      line-height: 1.25;
+    }
+    h2 {
+      font-size: 14pt;
+      font-weight: 700;
+      margin: 1.5rem 0 0.5rem;
+      color: #1a1a1a;
+      border-left: 3px solid #4F46E5;
+      padding-left: 0.6rem;
+    }
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      margin: 1rem 0 0.3rem;
+      color: #333;
+    }
+    p { margin-bottom: 0.75rem; }
+    ul, ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+    li { margin-bottom: 0.3rem; }
+    blockquote {
+      border-left: 3px solid #4F46E5;
+      padding: 0.5rem 1rem;
+      background: #f5f5ff;
+      margin: 0.75rem 0;
+      font-style: italic;
+      color: #444;
+    }
+    strong { font-weight: 700; }
+    em { font-style: italic; }
+    .keywords {
+      font-family: Arial, sans-serif;
+      font-size: 8.5pt;
+      color: #555;
+      margin-bottom: 1.25rem;
+    }
+    .keywords span {
+      display: inline-block;
+      padding: 0.1rem 0.45rem;
+      background: #EEF2FF;
+      color: #4338CA;
+      border-radius: 4px;
+      margin-right: 0.3rem;
+      font-weight: 600;
+    }
+    .summary-box {
+      background: #F0FDF4;
+      border: 1px solid #86EFAC;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+    }
+    .summary-box h3 {
+      font-family: Arial, sans-serif;
+      font-size: 10pt;
+      font-weight: 700;
+      color: #166534;
+      margin-bottom: 0.5rem;
+      border: none;
+      padding: 0;
+    }
+    .summary-box ul { padding-left: 1.25rem; }
+    .summary-box li { font-size: 10pt; color: #166534; }
+    .print-btn {
+      position: fixed;
+      top: 1rem; right: 1rem;
+      background: #4F46E5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-family: Arial, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: 0 2px 8px rgba(79,70,229,0.3);
+    }
+    .print-btn:hover { background: #4338CA; }
+    @media print {
+      .print-btn { display: none; }
+      body { padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">
+    🖨️ Print / Save as PDF
+  </button>
+
+  <div class="meta">
+    <strong>{{ draft.title|default:"Blog Post" }}</strong>
+    <div class="meta-row">
+      <span>Author: {{ draft.user.get_full_name|default:draft.user.username }}</span>
+      <span>Date: {{ draft.created_at|date:"F j, Y" }}</span>
+      <span>Model: {{ draft.ai_model_used|upper }}</span>
+      <span>Status: {{ draft.get_status_display }}</span>
+    </div>
+  </div>
+
+  <h1>{{ draft.title|default:"Blog Post" }}</h1>
+
+  {% if draft.seo_keywords %}
+  <div class="keywords">
+    <strong>Keywords:</strong>
+    {% for kw in draft.seo_keywords %}<span>{{ kw }}</span>{% endfor %}
+  </div>
+  {% endif %}
+
+  {% autoescape off %}
+  {% load static %}
+  <div id="content">
+    {% with content=draft.edited_content|default:draft.generated_content %}
+      {{ content|linebreaksbr }}
+    {% endwith %}
+  </div>
+  {% endautoescape %}
+
+  {% if draft.summary %}
+  <div class="summary-box">
+    <h3>✅ Key Takeaways</h3>
+    <ul>
+      {% for bullet in draft.summary %}
+      <li>{{ bullet }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <script>
+    // Convert markdown to basic HTML for print
+    const contentEl = document.getElementById('content');
+    let html = contentEl.innerHTML;
+    html = html.replace(/##\s(.+?)(<br>|$)/g, '<h2>$1</h2>');
+    html = html.replace(/###\s(.+?)(<br>|$)/g, '<h3>$1</h3>');
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/^&gt;\s(.+)/gm, '<blockquote>$1</blockquote>');
+    contentEl.innerHTML = html;
+  </script>
+</body>
+</html>

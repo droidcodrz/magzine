@@ -111,6 +111,7 @@ LOGOUT_REDIRECT_URL = '/'
 
 ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', '')
 
 # Session security
 SESSION_COOKIE_HTTPONLY = True

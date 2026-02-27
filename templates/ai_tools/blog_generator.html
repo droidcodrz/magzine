@@ -1,5 +1,4 @@
 {% extends 'base_sidebar.html' %}
-
 {% block title %}Generate Blog{% endblock %}
 {% block page_title %}Generate Blog{% endblock %}
 
@@ -11,100 +10,218 @@
       <i class="bi bi-pencil-square"></i>
     </div>
     <div>
-      <div class="page-header-title">AI Blog Draft Generator</div>
-      <div class="page-header-sub">Describe your article idea and let AI write a full draft you can edit and publish.</div>
+      <div class="page-header-title">AI Blog Generator</div>
+      <div class="page-header-sub">Enter a topic → get a SEO outline → generate the full blog with summary.</div>
+    </div>
+  </div>
+
+  <!-- Progress Steps -->
+  <div class="gen-steps">
+    <div class="gen-step active" id="step1Indicator">
+      <div class="gen-step-num">1</div>
+      <div class="gen-step-label">Enter Topic</div>
+    </div>
+    <div class="gen-step-connector"></div>
+    <div class="gen-step" id="step2Indicator">
+      <div class="gen-step-num">2</div>
+      <div class="gen-step-label">SEO Outline</div>
+    </div>
+    <div class="gen-step-connector"></div>
+    <div class="gen-step" id="step3Indicator">
+      <div class="gen-step-num">3</div>
+      <div class="gen-step-label">Blog + Summary</div>
     </div>
   </div>
 
   <div class="generator-layout">
-
-    <!-- Left: Form -->
     <div class="generator-main">
-      <div class="dash-card">
+
+      <!-- ── STEP 1: Topic Input ── -->
+      <div class="dash-card" id="step1Card">
         <div class="dash-card-header">
-          <div class="dash-card-title">Your Article Idea</div>
-          <span class="dash-card-subtitle" id="charCountLabel">0 / 1000 characters</span>
+          <div>
+            <div class="dash-card-title">Step 1 — Your Topic or Idea</div>
+            <div class="dash-card-subtitle" id="charCountLabel">0 / 500 characters</div>
+          </div>
         </div>
-
         <div style="padding:1.25rem 1.5rem 0;">
-          <textarea id="ideaInput" class="gen-textarea gen-textarea-lg" rows="6"
-            placeholder="e.g. 'Write an article about how remote work has changed urban planning in major cities, focusing on the decline of office districts and the rise of mixed-use neighbourhoods...'"></textarea>
+          <textarea id="topicInput" class="gen-textarea gen-textarea-lg" rows="4"
+            placeholder="e.g. 'How to set up a cozy bedroom on a budget'&#10;or 'The best morning routines for productivity'&#10;or 'How AI is changing digital marketing in 2025'"></textarea>
         </div>
-
         <div style="padding:1.25rem 1.5rem;">
           <label class="gen-label" style="margin-bottom:0.5rem;">AI Model</label>
           <div class="model-selector-row">
             <div class="model-selector" id="modelSelector">
-              <button type="button" class="model-btn active" data-model="claude"
-                title="Claude Sonnet 4.6 — Best for creative, long-form writing">
+              <button type="button" class="model-btn active" data-model="claude">
                 <span class="model-btn-icon">🤖</span>
                 <span class="model-btn-label">Claude</span>
                 <span class="model-btn-sub">Sonnet 4.6</span>
               </button>
-              <button type="button" class="model-btn" data-model="openai"
-                title="GPT-4o — Great for structured, research-based content">
+              <button type="button" class="model-btn" data-model="openai">
                 <span class="model-btn-icon">✨</span>
                 <span class="model-btn-label">OpenAI</span>
                 <span class="model-btn-sub">GPT-4o</span>
               </button>
-              <button type="button" class="model-btn" data-model="auto"
-                title="Auto — Picks the best model automatically">
+              <button type="button" class="model-btn" data-model="gemini">
+                <span class="model-btn-icon">🌟</span>
+                <span class="model-btn-label">Gemini</span>
+                <span class="model-btn-sub">1.5 Pro</span>
+              </button>
+              <button type="button" class="model-btn" data-model="auto">
                 <span class="model-btn-icon">⚡</span>
                 <span class="model-btn-label">Auto</span>
                 <span class="model-btn-sub">Best fit</span>
               </button>
             </div>
-            <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateDraft()">
-              <i class="bi bi-stars"></i> Generate Blog Post
+            <button id="generateOutlineBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateOutline()">
+              <i class="bi bi-diagram-3"></i> Generate Outline
             </button>
           </div>
           <p class="gen-hint" style="margin-top:0.6rem;">
-            <i class="bi bi-info-circle me-1"></i>Generation takes 15–30 seconds · Powered by Anthropic &amp; OpenAI
+            <i class="bi bi-info-circle me-1"></i>Step 1 of 2 · Generates a SEO-optimised outline first
           </p>
         </div>
       </div>
 
-      <!-- Loading -->
-      <div id="loadingState" class="gen-loading" style="display:none;">
+      <!-- ── Loading Outline ── -->
+      <div id="loadingOutline" class="gen-loading" style="display:none;">
         <div class="gen-spinner"></div>
         <div>
-          <p id="loadingModelLabel">Generating with Claude...</p>
-          <p class="gen-loading-sub">This may take 15–30 seconds</p>
+          <p>Generating SEO outline...</p>
+          <p class="gen-loading-sub">Analysing topic, finding keywords, structuring headings</p>
         </div>
       </div>
 
-      <!-- Error -->
-      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:1rem;"></div>
-
-      <!-- Draft Preview -->
-      <div id="draftPreview" style="display:none;">
+      <!-- ── STEP 2: Outline Preview ── -->
+      <div id="step2Card" style="display:none;">
         <div class="dash-card">
           <div class="dash-card-header">
-            <div class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Generated Draft</div>
-            <div style="display:flex;align-items:center;gap:0.5rem;">
-              <span id="modelUsedBadge" class="model-used-badge"></span>
-              <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateDraft()">
+            <div>
+              <div class="dash-card-title"><i class="bi bi-diagram-3 me-2" style="color:#4F46E5;"></i>Step 2 — SEO Outline</div>
+              <div class="dash-card-subtitle">Review the outline, then generate the full blog</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span id="outlineModelBadge" class="model-used-badge"></span>
+              <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateOutline()">
                 <i class="bi bi-arrow-clockwise"></i> Regenerate
               </button>
             </div>
           </div>
-          <div class="draft-preview-body">
-            <h3 id="draftTitle" class="draft-preview-title"></h3>
-            <div id="draftContent" class="draft-preview-content"></div>
+
+          <!-- Suggested Title -->
+          <div style="padding:1.25rem 1.5rem 0;">
+            <label class="gen-label">Suggested Title (H1)</label>
+            <div id="outlineTitle" class="outline-title-preview"></div>
           </div>
-          <div class="gen-actions">
-            <button class="dash-btn dash-btn-outline" onclick="generateDraft()">
-              <i class="bi bi-arrow-clockwise"></i> Regenerate
+
+          <!-- Meta Description -->
+          <div style="padding:0.75rem 1.5rem 0;">
+            <label class="gen-label">Meta Description <span class="gen-label-optional">(SEO)</span></label>
+            <div id="outlineMeta" class="outline-meta-preview"></div>
+          </div>
+
+          <!-- Focus Keywords -->
+          <div style="padding:0.75rem 1.5rem 0;">
+            <label class="gen-label">Focus Keywords</label>
+            <div id="outlineKeywords" class="outline-keywords"></div>
+          </div>
+
+          <!-- Sections -->
+          <div style="padding:0.75rem 1.5rem 1.25rem;">
+            <label class="gen-label">Article Structure</label>
+            <div id="outlineSections" class="outline-sections"></div>
+          </div>
+
+          <div style="padding:0 1.5rem 1.25rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;border-top:1px solid var(--card-border);padding-top:1rem;">
+            <button id="generateBlogBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateBlog()">
+              <i class="bi bi-stars"></i> Generate Full Blog
             </button>
-            <a id="editDraftBtn" href="#" class="dash-btn dash-btn-primary">
-              <i class="bi bi-pencil-square"></i> Edit &amp; Save Draft
-            </a>
+            <button class="dash-btn dash-btn-outline" onclick="resetToStep1()">
+              <i class="bi bi-arrow-left"></i> Change Topic
+            </button>
+            <p class="gen-hint" style="margin:0 0 0 auto;">Takes 15–30 seconds</p>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Right: Sidebar -->
+      <!-- ── Loading Blog ── -->
+      <div id="loadingBlog" class="gen-loading" style="display:none;">
+        <div class="gen-spinner"></div>
+        <div>
+          <p id="loadingBlogLabel">Generating full blog post...</p>
+          <p class="gen-loading-sub">Writing SEO content, following the outline structure</p>
+        </div>
+      </div>
+
+      <!-- ── Error ── -->
+      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:0.5rem;"></div>
+
+      <!-- ── STEP 3: Blog Preview + Summary ── -->
+      <div id="step3Card" style="display:none;">
+        <div class="dash-card">
+          <div class="dash-card-header">
+            <div>
+              <div class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Step 3 — Generated Blog</div>
+              <div class="dash-card-subtitle">Review the blog and summary</div>
+            </div>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <span id="blogModelBadge" class="model-used-badge"></span>
+              <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateBlog()">
+                <i class="bi bi-arrow-clockwise"></i> Regenerate
+              </button>
+            </div>
+          </div>
+
+          <div class="draft-preview-body">
+            <h3 id="blogTitle" class="draft-preview-title"></h3>
+
+            <!-- SEO Keywords bar -->
+            <div id="blogKeywordsBar" style="display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:1rem;"></div>
+
+            <div id="blogContent" class="draft-preview-content"></div>
+          </div>
+
+          <!-- Key Takeaways / Summary -->
+          <div id="summarySection" style="display:none;">
+            <div style="margin:0 1.5rem 0;padding:1rem 1.25rem;background:var(--primary-light);border-radius:var(--radius);border-left:3px solid var(--primary);">
+              <div style="font-size:0.85rem;font-weight:700;color:var(--primary);margin-bottom:0.6rem;">
+                <i class="bi bi-list-check me-1"></i> Blog Summary — Key Takeaways
+              </div>
+              <ul id="summaryList" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.3rem;"></ul>
+            </div>
+          </div>
+
+          <div class="gen-actions" style="margin-top:0.75rem;">
+            <a id="editDraftBtn" href="#" class="dash-btn dash-btn-primary">
+              <i class="bi bi-pencil-square"></i> Edit &amp; Save
+            </a>
+            <button class="dash-btn dash-btn-outline" onclick="generateBlog()">
+              <i class="bi bi-arrow-clockwise"></i> Regenerate
+            </button>
+            <div style="margin-left:auto;display:flex;gap:0.5rem;">
+              <a id="downloadDocxBtn" href="#" class="dash-btn dash-btn-outline dash-btn-sm" title="Download DOCX">
+                <i class="bi bi-file-word"></i> DOCX
+              </a>
+              <a id="downloadPdfBtn" href="#" target="_blank" class="dash-btn dash-btn-outline dash-btn-sm" title="Print / Save as PDF">
+                <i class="bi bi-file-pdf"></i> PDF
+              </a>
+              <button id="generateImageBtn" class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateImage()" title="Generate featured image (DALL-E 3, requires OpenAI key)">
+                <i class="bi bi-image"></i> Generate Image
+              </button>
+            </div>
+          </div>
+
+          <!-- Image preview after generation -->
+          <div id="imagePreview" style="display:none;padding:0 1.5rem 1.25rem;">
+            <label class="gen-label">Generated Featured Image</label>
+            <img id="generatedImage" src="" alt="Featured image" style="max-width:100%;border-radius:var(--radius);border:1px solid var(--card-border);">
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /generator-main -->
+
+    <!-- ── Sidebar ── -->
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
@@ -113,7 +230,6 @@
           </div>
           <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
-
         {% if drafts %}
           {% for draft in drafts|slice:":8" %}
           <div class="history-item">
@@ -121,17 +237,9 @@
               <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:44 }}</a>
             </div>
             <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-top:0.3rem;">
-              <div style="display:flex;align-items:center;gap:0.4rem;">
-                <span class="history-item-date">{{ draft.created_at|date:"M d" }}</span>
-                {% if draft.ai_model_used %}
-                  <span class="model-mini-badge model-{{ draft.ai_model_used }}">{{ draft.ai_model_used|upper }}</span>
-                {% endif %}
-              </div>
+              <span class="history-item-date">{{ draft.created_at|date:"M d" }}</span>
               <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
             </div>
-            {% if is_admin and draft.user != request.user %}
-            <div class="history-item-date" style="color:#9333EA;margin-top:0.2rem;">by {{ draft.user.get_full_name }}</div>
-            {% endif %}
           </div>
           {% endfor %}
         {% else %}
@@ -143,11 +251,14 @@
       </div>
 
       <div class="dash-card tip-card">
-        <div class="tip-title"><i class="bi bi-info-circle-fill me-2" style="color:#4F46E5;"></i>Model Guide</div>
+        <div class="tip-title"><i class="bi bi-info-circle-fill me-2" style="color:#4F46E5;"></i>How It Works</div>
         <ul class="tip-list">
-          <li><strong>Claude</strong> — Best for creative, long-form magazine writing</li>
-          <li><strong>OpenAI GPT-4o</strong> — Great for structured, research-based articles</li>
-          <li><strong>Auto</strong> — Picks Claude for blogs, OpenAI for research automatically</li>
+          <li><strong>Step 1:</strong> Enter your topic idea</li>
+          <li><strong>Step 2:</strong> AI generates an SEO outline with keywords and headings</li>
+          <li><strong>Step 3:</strong> AI writes the full blog following the outline</li>
+          <li>A <strong>bullet-point summary</strong> is included automatically</li>
+          <li>Download as <strong>DOCX</strong> or <strong>PDF</strong></li>
+          <li><strong>Generate Image</strong> requires OpenAI key (DALL-E 3)</li>
         </ul>
       </div>
     </div>
@@ -155,90 +266,321 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* Progress steps */
+.gen-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.gen-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+}
+.gen-step.active { opacity: 1; }
+.gen-step.done { opacity: 0.7; }
+.gen-step-num {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--card-border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.gen-step.active .gen-step-num {
+  background: var(--primary);
+  color: #fff;
+}
+.gen-step.done .gen-step-num {
+  background: var(--success);
+  color: #fff;
+}
+.gen-step-label { font-size: 0.8rem; font-weight: 600; color: var(--text-body); white-space: nowrap; }
+.gen-step-connector { flex: 1; min-width: 24px; height: 2px; background: var(--card-border); margin: 0 0.5rem; }
+
+/* Outline preview */
+.outline-title-preview {
+  font-size: 1rem; font-weight: 700; color: var(--text-dark);
+  background: var(--primary-light); border-radius: var(--radius-sm);
+  padding: 0.625rem 0.875rem; border-left: 3px solid var(--primary);
+}
+.outline-meta-preview {
+  font-size: 0.82rem; color: var(--text-body);
+  background: #F9FAFB; border-radius: var(--radius-sm);
+  padding: 0.625rem 0.875rem; border: 1px solid var(--card-border);
+}
+.outline-keywords { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.outline-keyword-tag {
+  display: inline-flex; align-items: center;
+  padding: 0.2rem 0.65rem; border-radius: 99px;
+  background: var(--primary-light); color: var(--primary);
+  font-size: 0.75rem; font-weight: 600;
+}
+.outline-keyword-tag.primary { background: var(--primary); color: #fff; }
+.outline-sections { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem; }
+.outline-section-item {
+  border: 1px solid var(--card-border); border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem; background: #FAFAFA;
+}
+.outline-section-h2 { font-size: 0.875rem; font-weight: 700; color: var(--text-dark); }
+.outline-section-h3 {
+  font-size: 0.78rem; color: var(--text-muted);
+  margin-top: 0.25rem; padding-left: 0.75rem;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.outline-section-notes { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.3rem; font-style: italic; }
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
-  let currentDraftId = null;
-  let selectedModel = 'claude';
+let selectedModel = 'claude';
+let currentOutline = null;
+let currentDraftId = null;
 
-  window.addEventListener('load', function() {
-    const savedIdea = sessionStorage.getItem('ai_idea');
-    if (savedIdea) {
-      document.getElementById('ideaInput').value = savedIdea;
-      updateCharCount();
-      sessionStorage.removeItem('ai_idea');
-    }
+// Pre-fill from idea generator
+window.addEventListener('load', function() {
+  const savedIdea = sessionStorage.getItem('ai_idea');
+  if (savedIdea) {
+    document.getElementById('topicInput').value = savedIdea;
+    updateCharCount();
+    sessionStorage.removeItem('ai_idea');
+  }
+});
+
+// Model selector
+document.querySelectorAll('.model-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedModel = btn.dataset.model;
   });
+});
 
-  document.querySelectorAll('.model-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedModel = btn.dataset.model;
+const topicInput = document.getElementById('topicInput');
+topicInput.addEventListener('input', updateCharCount);
+function updateCharCount() {
+  const c = topicInput.value.length;
+  const lbl = document.getElementById('charCountLabel');
+  lbl.textContent = c + ' / 500 characters';
+  lbl.style.color = c > 450 ? '#ef4444' : '';
+}
+
+function setStep(n) {
+  ['step1Indicator','step2Indicator','step3Indicator'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active', 'done');
+    if (i + 1 < n) el.classList.add('done');
+    if (i + 1 === n) el.classList.add('active');
+  });
+}
+
+function resetToStep1() {
+  document.getElementById('step2Card').style.display = 'none';
+  document.getElementById('step3Card').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  currentOutline = null;
+  setStep(1);
+}
+
+// ── STEP 1 → 2: Generate Outline ──
+async function generateOutline() {
+  const topic = topicInput.value.trim();
+  if (!topic) { alert('Please enter a topic.'); return; }
+  if (topic.length < 5) { alert('Please be more specific.'); return; }
+
+  document.getElementById('loadingOutline').style.display = 'flex';
+  document.getElementById('step2Card').style.display = 'none';
+  document.getElementById('step3Card').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('generateOutlineBtn').disabled = true;
+  setStep(2);
+
+  try {
+    const res = await fetch('{% url "generate_outline" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ topic, model: selectedModel }),
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate outline.');
+    currentOutline = data.outline;
+    renderOutline(data.outline, data.model_used);
+  } catch (err) {
+    showError(err.message);
+    setStep(1);
+  } finally {
+    document.getElementById('loadingOutline').style.display = 'none';
+    document.getElementById('generateOutlineBtn').disabled = false;
+  }
+}
+
+function renderOutline(outline, modelUsed) {
+  document.getElementById('outlineTitle').textContent = outline.title || '—';
+  document.getElementById('outlineMeta').textContent = outline.meta_description || '—';
+
+  const kwEl = document.getElementById('outlineKeywords');
+  kwEl.innerHTML = '';
+  (outline.focus_keywords || []).forEach((kw, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'outline-keyword-tag' + (i === 0 ? ' primary' : '');
+    tag.textContent = kw;
+    kwEl.appendChild(tag);
   });
 
-  const ideaInput = document.getElementById('ideaInput');
-  ideaInput.addEventListener('input', updateCharCount);
-
-  function updateCharCount() {
-    const count = ideaInput.value.length;
-    const label = document.getElementById('charCountLabel');
-    label.textContent = count + ' / 1000 characters';
-    label.style.color = count > 900 ? '#ef4444' : '';
-  }
-
-  async function generateDraft() {
-    const idea = ideaInput.value.trim();
-    if (!idea) { alert('Please enter your article idea.'); return; }
-    if (idea.length < 10) { alert('Please provide more detail.'); return; }
-
-    const modelLabels = { claude: 'Claude Sonnet 4.6', openai: 'OpenAI GPT-4o', auto: 'Auto (best fit)' };
-    document.getElementById('loadingModelLabel').textContent = 'Generating with ' + modelLabels[selectedModel] + '...';
-    document.getElementById('loadingState').style.display = 'flex';
-    document.getElementById('draftPreview').style.display = 'none';
-    document.getElementById('errorState').style.display = 'none';
-    document.getElementById('generateBtn').disabled = true;
-
-    try {
-      const response = await fetch('{% url "generate_draft" %}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ idea: idea, model: selectedModel }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to generate draft.');
-      currentDraftId = data.draft_id;
-      renderDraft(data);
-    } catch (err) {
-      const errEl = document.getElementById('errorState');
-      errEl.textContent = err.message;
-      errEl.style.display = 'flex';
-    } finally {
-      document.getElementById('loadingState').style.display = 'none';
-      document.getElementById('generateBtn').disabled = false;
+  const secEl = document.getElementById('outlineSections');
+  secEl.innerHTML = '';
+  (outline.sections || []).forEach(sec => {
+    const div = document.createElement('div');
+    div.className = 'outline-section-item';
+    let html = `<div class="outline-section-h2"><i class="bi bi-hash me-1" style="color:var(--primary);"></i>${escapeHtml(sec.h2)}</div>`;
+    if (sec.h3_list && sec.h3_list.length) {
+      html += '<div class="outline-section-h3">' +
+        sec.h3_list.map(h => `<span><i class="bi bi-dash me-1"></i>${escapeHtml(h)}</span>`).join('') +
+        '</div>';
     }
+    if (sec.notes) {
+      html += `<div class="outline-section-notes"><i class="bi bi-info-circle me-1"></i>${escapeHtml(sec.notes)}</div>`;
+    }
+    div.innerHTML = html;
+    secEl.appendChild(div);
+  });
+
+  const modelNames = { claude:'🤖 Claude', openai:'✨ OpenAI', gemini:'🌟 Gemini', auto:'⚡ Auto' };
+  const badge = document.getElementById('outlineModelBadge');
+  badge.textContent = modelNames[modelUsed] || modelUsed;
+  badge.className = 'model-used-badge model-' + modelUsed;
+
+  document.getElementById('step2Card').style.display = 'block';
+}
+
+// ── STEP 2 → 3: Generate Blog ──
+async function generateBlog() {
+  const topic = topicInput.value.trim();
+  if (!topic) { alert('Please enter a topic first.'); return; }
+
+  document.getElementById('loadingBlog').style.display = 'flex';
+  document.getElementById('step3Card').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('generateBlogBtn').disabled = true;
+
+  const modelLabels = { claude:'Claude Sonnet 4.6', openai:'OpenAI GPT-4o', gemini:'Gemini 1.5 Pro', auto:'Auto (best fit)' };
+  document.getElementById('loadingBlogLabel').textContent =
+    'Generating with ' + (modelLabels[selectedModel] || selectedModel) + '...';
+
+  try {
+    const res = await fetch('{% url "generate_draft" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ idea: topic, outline: currentOutline || {}, model: selectedModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate blog.');
+    currentDraftId = data.draft_id;
+    renderBlog(data);
+    setStep(3);
+  } catch (err) {
+    showError(err.message);
+  } finally {
+    document.getElementById('loadingBlog').style.display = 'none';
+    document.getElementById('generateBlogBtn').disabled = false;
+  }
+}
+
+function renderBlog(data) {
+  document.getElementById('blogTitle').textContent = data.title;
+
+  // Keywords bar
+  const kwBar = document.getElementById('blogKeywordsBar');
+  kwBar.innerHTML = '';
+  (data.seo_keywords || []).forEach((kw, i) => {
+    const tag = document.createElement('span');
+    tag.className = 'outline-keyword-tag' + (i === 0 ? ' primary' : '');
+    tag.textContent = kw;
+    kwBar.appendChild(tag);
+  });
+  kwBar.style.display = data.seo_keywords && data.seo_keywords.length ? 'flex' : 'none';
+
+  // Blog content (markdown → HTML)
+  let content = data.content
+    .replace(/^## (.*?)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.*?)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+  document.getElementById('blogContent').innerHTML = '<p>' + content + '</p>';
+
+  // Summary bullets
+  const bullets = data.summary_bullets || [];
+  const summarySection = document.getElementById('summarySection');
+  const summaryList = document.getElementById('summaryList');
+  if (bullets.length) {
+    summaryList.innerHTML = bullets.map(b =>
+      `<li style="font-size:0.82rem;color:var(--text-body);padding:0.2rem 0;display:flex;gap:0.5rem;">
+        <i class="bi bi-check2-circle" style="color:var(--primary);flex-shrink:0;margin-top:2px;"></i>
+        <span>${escapeHtml(b)}</span>
+      </li>`
+    ).join('');
+    summarySection.style.display = 'block';
   }
 
-  function renderDraft(data) {
-    document.getElementById('draftTitle').textContent = data.title;
-    let content = data.content
-      .replace(/## (.*?)$/gm, '<h2>$1</h2>')
-      .replace(/### (.*?)$/gm, '<h3>$1</h3>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>')
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    document.getElementById('draftContent').innerHTML = '<p>' + content + '</p>';
-    document.getElementById('editDraftBtn').href = '/ai/blog-generator/draft/' + currentDraftId + '/';
+  // Model badge
+  const modelNames = { claude:'🤖 Claude', openai:'✨ OpenAI', gemini:'🌟 Gemini', auto:'⚡ Auto' };
+  const badge = document.getElementById('blogModelBadge');
+  badge.textContent = modelNames[data.model_used] || data.model_used;
+  badge.className = 'model-used-badge model-' + data.model_used;
 
-    const modelNames = { claude: '🤖 Claude', openai: '✨ OpenAI', auto: '⚡ Auto' };
-    const badge = document.getElementById('modelUsedBadge');
-    badge.textContent = modelNames[data.model_used || selectedModel] || selectedModel;
-    badge.className = 'model-used-badge model-' + (data.model_used || selectedModel);
+  // Action buttons
+  document.getElementById('editDraftBtn').href = '/ai/blog-generator/draft/' + currentDraftId + '/';
+  document.getElementById('downloadDocxBtn').href = '/ai/blog-generator/draft/' + currentDraftId + '/docx/';
+  document.getElementById('downloadPdfBtn').href  = '/ai/blog-generator/draft/' + currentDraftId + '/pdf/';
 
-    document.getElementById('draftPreview').style.display = 'block';
-    document.getElementById('draftPreview').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('step3Card').style.display = 'block';
+  document.getElementById('step3Card').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Image Generation ──
+async function generateImage() {
+  if (!currentDraftId) return;
+  const btn = document.getElementById('generateImageBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="gen-spinner" style="width:16px;height:16px;border-width:2px;"></span> Generating...';
+
+  try {
+    const res = await fetch('/ai/blog-generator/draft/' + currentDraftId + '/image/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF_TOKEN },
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Image generation failed.');
+    document.getElementById('generatedImage').src = data.image_url;
+    document.getElementById('imagePreview').style.display = 'block';
+    btn.innerHTML = '<i class="bi bi-image"></i> Regenerate Image';
+  } catch (err) {
+    alert('Image generation failed: ' + err.message);
+    btn.innerHTML = '<i class="bi bi-image"></i> Generate Image';
+  } finally {
+    btn.disabled = false;
   }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorState');
+  el.textContent = msg;
+  el.style.display = 'flex';
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(text)));
+  return d.innerHTML;
+}
 </script>
 {% endblock %}

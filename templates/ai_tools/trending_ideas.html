@@ -1,0 +1,276 @@
+{% extends 'base_sidebar.html' %}
+{% block title %}Trending Ideas{% endblock %}
+{% block page_title %}Trending Ideas{% endblock %}
+
+{% block content %}
+<div class="dash-page">
+
+  <div class="page-header">
+    <div class="page-header-icon" style="background:#FFF7ED;color:#EA580C;">
+      <i class="bi bi-fire"></i>
+    </div>
+    <div>
+      <div class="page-header-title">Trending Idea Search <span style="font-size:0.7rem;background:#FDF2FF;color:#9333EA;padding:0.2rem 0.5rem;border-radius:4px;font-weight:700;vertical-align:middle;margin-left:0.5rem;">ADMIN ONLY</span></div>
+      <div class="page-header-sub">Discover what's trending right now. AI generates high-engagement topic ideas based on current trends.</div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="dash-card">
+    <div class="dash-card-header">
+      <div class="dash-card-title">Find Trending Topics</div>
+    </div>
+    <div style="padding:1.25rem 1.5rem;">
+
+      <label class="gen-label" style="margin-bottom:0.5rem;">Filter by Category <span class="gen-label-optional">(optional — leave blank for all categories)</span></label>
+      <div class="topic-grid" style="margin-bottom:1.25rem;" id="categoryPills">
+        <div class="topic-chip {% if not request.GET.category %}selected{% endif %}" data-cat="" onclick="selectCategory(this)">
+          <i class="bi bi-grid-fill"></i><span>All Categories</span>
+        </div>
+        {% for cat in topic_categories %}
+          {% for value, label, icon in cat.topics %}
+          <div class="topic-chip" data-cat="{{ value }}" onclick="selectCategory(this)">
+            <i class="{{ icon }}"></i><span>{{ label }}</span>
+          </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+
+      <label class="gen-label" style="margin-bottom:0.5rem;">AI Model</label>
+      <div class="model-selector-row">
+        <div class="model-selector">
+          <button type="button" class="model-btn active" data-model="claude">
+            <span class="model-btn-icon">🤖</span>
+            <span class="model-btn-label">Claude</span>
+            <span class="model-btn-sub">Sonnet 4.6</span>
+          </button>
+          <button type="button" class="model-btn" data-model="openai">
+            <span class="model-btn-icon">✨</span>
+            <span class="model-btn-label">OpenAI</span>
+            <span class="model-btn-sub">GPT-4o</span>
+          </button>
+          <button type="button" class="model-btn" data-model="gemini">
+            <span class="model-btn-icon">🌟</span>
+            <span class="model-btn-label">Gemini</span>
+            <span class="model-btn-sub">1.5 Pro</span>
+          </button>
+          <button type="button" class="model-btn" data-model="auto">
+            <span class="model-btn-icon">⚡</span>
+            <span class="model-btn-label">Auto</span>
+            <span class="model-btn-sub">Best fit</span>
+          </button>
+        </div>
+        <button id="trendingBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="findTrending()" style="background:#EA580C;border-color:#EA580C;">
+          <i class="bi bi-fire"></i> Find Trending Topics
+        </button>
+      </div>
+      <p class="gen-hint" style="margin-top:0.6rem;">
+        <i class="bi bi-info-circle me-1"></i>Returns 10 trending topics · Click any topic to use it in the Blog Generator
+      </p>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loadingState" class="gen-loading" style="display:none;">
+    <div class="gen-spinner"></div>
+    <div>
+      <p>Analysing trends...</p>
+      <p class="gen-loading-sub">Finding the most relevant trending topics right now</p>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;margin-top:0.5rem;"></div>
+
+  <!-- Results -->
+  <div id="resultsSection" style="display:none;">
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div>
+          <div class="dash-card-title"><i class="bi bi-fire me-2" style="color:#EA580C;"></i>Trending Topics</div>
+          <div class="dash-card-subtitle" id="resultsSubtitle"></div>
+        </div>
+        <div style="display:flex;gap:0.5rem;align-items:center;">
+          <span id="modelUsedBadge" class="model-used-badge"></span>
+          <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="findTrending()">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+          </button>
+        </div>
+      </div>
+      <div id="trendingGrid" class="trending-grid"></div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.trending-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.875rem;
+  padding: 1.25rem 1.5rem;
+}
+@media (max-width: 768px) { .trending-grid { grid-template-columns: 1fr; } }
+
+.trending-card {
+  border: 1.5px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.125rem;
+  background: #fff;
+  transition: var(--transition);
+  position: relative;
+}
+.trending-card:hover { border-color: #EA580C; box-shadow: 0 0 0 3px rgba(234,88,12,0.07); }
+
+.trending-rank {
+  font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text-muted); margin-bottom: 0.3rem;
+}
+.trending-title { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); margin-bottom: 0.4rem; line-height: 1.35; }
+.trending-reason { font-size: 0.78rem; color: var(--text-body); margin-bottom: 0.5rem; line-height: 1.5; }
+
+.trending-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem; }
+
+.trending-volume {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.15rem 0.5rem; border-radius: 99px;
+  font-size: 0.7rem; font-weight: 600;
+}
+.vol-very-high { background: #FEF2F2; color: #991B1B; }
+.vol-high { background: #FFFBEB; color: #92400E; }
+.vol-medium { background: var(--primary-light); color: var(--primary); }
+
+.trending-keywords { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 0.6rem; }
+.trending-kw {
+  padding: 0.15rem 0.5rem; border-radius: 5px;
+  background: #F3F4F6; color: var(--text-muted);
+  font-size: 0.68rem; font-weight: 600;
+}
+.trending-use-btn {
+  width: 100%;
+  display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  padding: 0.45rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--card-border);
+  background: #fff;
+  font-size: 0.78rem; font-weight: 600;
+  color: var(--text-body);
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+.trending-use-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedCategory = '';
+let selectedModel = 'claude';
+
+document.querySelectorAll('.model-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedModel = btn.dataset.model;
+  });
+});
+
+function selectCategory(chip) {
+  document.querySelectorAll('#categoryPills .topic-chip').forEach(c => c.classList.remove('selected'));
+  chip.classList.add('selected');
+  selectedCategory = chip.dataset.cat;
+}
+
+async function findTrending() {
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('trendingBtn').disabled = true;
+
+  try {
+    const res = await fetch('{% url "generate_trending" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ category: selectedCategory, model: selectedModel }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch trending topics.');
+    renderTrending(data.ideas, data.model_used);
+  } catch (err) {
+    const el = document.getElementById('errorState');
+    el.textContent = err.message;
+    el.style.display = 'flex';
+  } finally {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('trendingBtn').disabled = false;
+  }
+}
+
+function renderTrending(ideas, modelUsed) {
+  const grid = document.getElementById('trendingGrid');
+  grid.innerHTML = '';
+
+  const subtitle = selectedCategory
+    ? `Top trending topics in "${selectedCategory}" category`
+    : 'Top trending topics across all categories';
+  document.getElementById('resultsSubtitle').textContent = subtitle;
+
+  const modelNames = { claude:'🤖 Claude', openai:'✨ OpenAI', gemini:'🌟 Gemini', auto:'⚡ Auto' };
+  const badge = document.getElementById('modelUsedBadge');
+  badge.textContent = modelNames[modelUsed] || modelUsed;
+  badge.className = 'model-used-badge model-' + modelUsed;
+
+  ideas.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'trending-card';
+
+    const volClass = {
+      'Very High': 'vol-very-high',
+      'High': 'vol-high',
+      'Medium': 'vol-medium',
+    }[item.search_volume] || 'vol-medium';
+
+    const kwHtml = (item.keywords || []).map(k =>
+      `<span class="trending-kw">${escapeHtml(k)}</span>`
+    ).join('');
+
+    const blogUrl = '{% url "blog_generator" %}';
+    const topicEncoded = encodeURIComponent(item.suggested_angle || item.topic);
+
+    card.innerHTML = `
+      <div class="trending-rank">#${i + 1} Trending</div>
+      <div class="trending-title">${escapeHtml(item.topic)}</div>
+      <div class="trending-reason"><i class="bi bi-arrow-trend-up me-1" style="color:#EA580C;"></i>${escapeHtml(item.reason)}</div>
+      <div class="trending-meta">
+        <span class="trending-volume ${volClass}"><i class="bi bi-bar-chart-fill me-1"></i>${escapeHtml(item.search_volume || 'High')}</span>
+        <span class="dash-tag">${escapeHtml(item.category || 'general')}</span>
+      </div>
+      <div class="trending-keywords">${kwHtml}</div>
+      ${item.suggested_angle ? `<div style="font-size:0.75rem;color:var(--primary);margin-bottom:0.6rem;"><i class="bi bi-lightbulb me-1"></i>${escapeHtml(item.suggested_angle)}</div>` : ''}
+      <a href="${blogUrl}" onclick="useTopic('${escapeHtml(item.suggested_angle || item.topic).replace(/'/g,'\\\'')}')" class="trending-use-btn">
+        <i class="bi bi-pencil-square"></i> Use This Topic
+      </a>`;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('resultsSection').style.display = 'block';
+}
+
+function useTopic(topicText) {
+  sessionStorage.setItem('ai_idea', topicText);
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(text)));
+  return d.innerHTML;
+}
+</script>
+{% endblock %}

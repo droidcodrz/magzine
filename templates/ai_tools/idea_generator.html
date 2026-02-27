@@ -1,5 +1,4 @@
 {% extends 'base_sidebar.html' %}
-
 {% block title %}Generate Idea{% endblock %}
 {% block page_title %}Generate Idea{% endblock %}
 
@@ -12,53 +11,69 @@
     </div>
     <div>
       <div class="page-header-title">AI Idea Generator</div>
-      <div class="page-header-sub">Select topics and let AI generate compelling magazine article ideas for you.</div>
+      <div class="page-header-sub">Pick categories, add context, and let AI generate compelling article ideas.</div>
     </div>
   </div>
 
   <div class="generator-layout">
-
-    <!-- Left: Form -->
     <div class="generator-main">
       <div class="dash-card">
+
+        <!-- Category-wise Topic Selection -->
         <div class="dash-card-header">
-          <div class="dash-card-title">1. Choose Topics</div>
-          <span class="dash-card-subtitle">Select up to 8 topic areas</span>
+          <div>
+            <div class="dash-card-title">1. Choose Topics by Category</div>
+            <div class="dash-card-subtitle">Select up to 8 topics across any categories</div>
+          </div>
+          <span id="topicCountBadge" class="status-badge status-draft">0 / 8 selected</span>
         </div>
 
-        <div class="topic-grid" id="topicGrid" style="padding:1.25rem 1.5rem 0;">
-          {% for value, label, icon in topic_choices %}
-          <div class="topic-chip" data-topic="{{ value }}" onclick="toggleTopic(this)">
-            <i class="{{ icon }}"></i>
-            <span>{{ label }}</span>
+        <div style="padding:1.25rem 1.5rem 0;">
+          {% for cat in topic_categories %}
+          <div class="topic-category-group">
+            <div class="topic-category-label">
+              <i class="{{ cat.icon }} me-1"></i>{{ cat.name }}
+            </div>
+            <div class="topic-grid" style="margin-bottom:0.25rem;">
+              {% for value, label, icon in cat.topics %}
+              <div class="topic-chip" data-topic="{{ value }}" onclick="toggleTopic(this)">
+                <i class="{{ icon }}"></i>
+                <span>{{ label }}</span>
+              </div>
+              {% endfor %}
+            </div>
           </div>
           {% endfor %}
         </div>
 
+        <!-- Context -->
         <div style="padding:1.25rem 1.5rem 0;">
           <label class="gen-label">2. Add Context <span class="gen-label-optional">(optional)</span></label>
           <textarea id="additionalContext" class="gen-textarea" rows="3"
-            placeholder="e.g. 'Focus on local stories in London' or 'Target young professionals aged 25-35'"></textarea>
+            placeholder="e.g. 'Focus on local stories in London'&#10;or 'Target young professionals aged 25-35'&#10;or 'Winter 2025 seasonal content'"></textarea>
         </div>
 
+        <!-- Model + Generate -->
         <div style="padding:1.25rem 1.5rem;">
           <label class="gen-label" style="margin-bottom:0.5rem;">3. AI Model</label>
           <div class="model-selector-row">
-            <div class="model-selector" id="modelSelector">
-              <button type="button" class="model-btn active" data-model="claude"
-                title="Claude Sonnet 4.6 - Creative, nuanced ideas">
+            <div class="model-selector">
+              <button type="button" class="model-btn active" data-model="claude">
                 <span class="model-btn-icon">🤖</span>
                 <span class="model-btn-label">Claude</span>
                 <span class="model-btn-sub">Sonnet 4.6</span>
               </button>
-              <button type="button" class="model-btn" data-model="openai"
-                title="GPT-4o - Broad, research-driven ideas">
+              <button type="button" class="model-btn" data-model="openai">
                 <span class="model-btn-icon">✨</span>
                 <span class="model-btn-label">OpenAI</span>
                 <span class="model-btn-sub">GPT-4o</span>
               </button>
-              <button type="button" class="model-btn" data-model="auto"
-                title="Auto - Picks the best model based on topics">
+              <button type="button" class="model-btn" data-model="gemini">
+                <span class="model-btn-icon">🌟</span>
+                <span class="model-btn-label">Gemini</span>
+                <span class="model-btn-sub">1.5 Pro</span>
+              </button>
+              <button type="button" class="model-btn" data-model="auto">
                 <span class="model-btn-icon">⚡</span>
                 <span class="model-btn-label">Auto</span>
                 <span class="model-btn-sub">Best fit</span>
@@ -69,9 +84,12 @@
             </button>
           </div>
           <div style="display:flex;align-items:center;gap:1rem;margin-top:0.6rem;flex-wrap:wrap;">
-            <p class="gen-hint" style="padding:0;margin:0;">
-              <i class="bi bi-info-circle me-1"></i>Generates 8 article ideas
-            </p>
+            <p class="gen-hint" style="padding:0;margin:0;"><i class="bi bi-info-circle me-1"></i>Generates 8 article ideas</p>
+            {% if is_admin %}
+            <a href="{% url 'trending_ideas' %}" class="dash-link" style="font-size:0.78rem;">
+              <i class="bi bi-fire me-1"></i>Trending Ideas (Admin)
+            </a>
+            {% endif %}
             <a href="{% url 'manage_ideas' %}" class="dash-link" style="font-size:0.78rem;">
               <i class="bi bi-collection me-1"></i>View history
             </a>
@@ -83,7 +101,7 @@
         <div class="gen-spinner"></div>
         <div>
           <p id="loadingModelLabel">Generating with Claude...</p>
-          <p class="gen-loading-sub">Generating 8 article ideas...</p>
+          <p class="gen-loading-sub">Generating 8 article ideas across your selected topics...</p>
         </div>
       </div>
 
@@ -103,9 +121,9 @@
           <div class="ideas-grid" id="ideasGrid"></div>
           <div id="useIdeaSection" style="display:none;" class="gen-cta">
             <hr class="gen-divider">
-            <p>Ready to write this article?</p>
+            <p>Ready to write? The selected idea has been saved to the blog generator.</p>
             <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary">
-              <i class="bi bi-pencil-square"></i> Generate Full Draft
+              <i class="bi bi-pencil-square"></i> Generate Full Blog
             </a>
             <a href="{% url 'article_create' %}" class="dash-btn dash-btn-outline">
               <i class="bi bi-pen"></i> Write Manually
@@ -115,7 +133,7 @@
       </div>
     </div>
 
-    <!-- Right: Sidebar -->
+    <!-- Sidebar -->
     <div class="generator-side">
       <div class="dash-card">
         <div class="dash-card-header">
@@ -155,10 +173,13 @@
       <div class="dash-card tip-card">
         <div class="tip-title"><i class="bi bi-info-circle-fill me-2" style="color:#4F46E5;"></i>Tips</div>
         <ul class="tip-list">
-          <li>Select multiple topics for cross-topic ideas</li>
-          <li><strong>Click any tag</strong> in history to re-select that topic</li>
-          <li>Add context to narrow the focus</li>
-          <li>Click an idea card then Generate Full Draft</li>
+          <li>Pick topics from <strong>multiple categories</strong> for cross-topic ideas</li>
+          <li>Add context to get more <strong>targeted ideas</strong></li>
+          <li><strong>Click a tag</strong> in history to re-select that topic</li>
+          <li>Click an idea card to send it to the <strong>Blog Generator</strong></li>
+          {% if is_admin %}
+          <li>Use <strong>Trending Ideas</strong> to find what's hot right now</li>
+          {% endif %}
         </ul>
       </div>
     </div>
@@ -166,118 +187,143 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.topic-category-group { margin-bottom: 1rem; }
+.topic-category-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+</style>
+{% endblock %}
+
 {% block extra_js %}
 <script>
-  let selectedTopics = [];
-  let selectedModel = 'claude';
+let selectedTopics = [];
+let selectedModel = 'claude';
 
-  const preselected = {{ preselected_topics|safe }};
-  window.addEventListener('load', function() {
-    if (preselected && preselected.length) {
-      document.querySelectorAll('.topic-chip').forEach(function(chip) {
-        if (preselected.includes(chip.dataset.topic)) {
-          chip.classList.add('selected');
-          selectedTopics.push(chip.dataset.topic);
-        }
-      });
-    }
-  });
-
-  document.querySelectorAll('.model-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      selectedModel = btn.dataset.model;
+const preselected = {{ preselected_topics|safe }};
+window.addEventListener('load', function() {
+  if (preselected && preselected.length) {
+    document.querySelectorAll('.topic-chip').forEach(function(chip) {
+      if (preselected.includes(chip.dataset.topic)) {
+        chip.classList.add('selected');
+        selectedTopics.push(chip.dataset.topic);
+      }
     });
+    updateTopicBadge();
+  }
+});
+
+document.querySelectorAll('.model-btn').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedModel = btn.dataset.model;
   });
+});
 
-  function toggleTopic(chip) {
-    const topic = chip.dataset.topic;
-    if (chip.classList.contains('selected')) {
-      chip.classList.remove('selected');
-      selectedTopics = selectedTopics.filter(t => t !== topic);
-    } else {
-      if (selectedTopics.length >= 8) { alert('You can select at most 8 topics.'); return; }
-      chip.classList.add('selected');
-      selectedTopics.push(topic);
-    }
+function updateTopicBadge() {
+  const badge = document.getElementById('topicCountBadge');
+  badge.textContent = selectedTopics.length + ' / 8 selected';
+  badge.className = 'status-badge ' + (selectedTopics.length > 0 ? 'status-published' : 'status-draft');
+}
+
+function toggleTopic(chip) {
+  const topic = chip.dataset.topic;
+  if (chip.classList.contains('selected')) {
+    chip.classList.remove('selected');
+    selectedTopics = selectedTopics.filter(t => t !== topic);
+  } else {
+    if (selectedTopics.length >= 8) { alert('You can select at most 8 topics.'); return; }
+    chip.classList.add('selected');
+    selectedTopics.push(topic);
   }
+  updateTopicBadge();
+}
 
-  function quickSelectTopic(topic) {
-    const chip = document.querySelector('.topic-chip[data-topic="' + topic + '"]');
-    if (!chip) return;
-    if (!chip.classList.contains('selected')) {
-      if (selectedTopics.length >= 8) { alert('Maximum 8 topics selected.'); return; }
-      chip.classList.add('selected');
-      selectedTopics.push(topic);
-    }
-    chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+function quickSelectTopic(topic) {
+  const chip = document.querySelector('.topic-chip[data-topic="' + topic + '"]');
+  if (!chip) return;
+  if (!chip.classList.contains('selected')) {
+    if (selectedTopics.length >= 8) { alert('Maximum 8 topics selected.'); return; }
+    chip.classList.add('selected');
+    selectedTopics.push(topic);
+    updateTopicBadge();
   }
+  chip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
-  async function generateIdeas() {
-    if (selectedTopics.length === 0) { alert('Please select at least one topic.'); return; }
-    const context = document.getElementById('additionalContext').value.trim();
-    const modelLabels = { claude: 'Claude Sonnet 4.6', openai: 'OpenAI GPT-4o', auto: 'Auto (best fit)' };
-    document.getElementById('loadingModelLabel').textContent = 'Generating with ' + modelLabels[selectedModel] + '...';
-    document.getElementById('loadingState').style.display = 'flex';
-    document.getElementById('ideasResults').style.display = 'none';
-    document.getElementById('errorState').style.display = 'none';
-    document.getElementById('generateBtn').disabled = true;
+async function generateIdeas() {
+  if (selectedTopics.length === 0) { alert('Please select at least one topic.'); return; }
+  const context = document.getElementById('additionalContext').value.trim();
+  const modelLabels = { claude:'Claude Sonnet 4.6', openai:'OpenAI GPT-4o', gemini:'Gemini 1.5 Pro', auto:'Auto (best fit)' };
+  document.getElementById('loadingModelLabel').textContent = 'Generating with ' + (modelLabels[selectedModel] || selectedModel) + '...';
+  document.getElementById('loadingState').style.display = 'flex';
+  document.getElementById('ideasResults').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('generateBtn').disabled = true;
 
-    try {
-      const response = await fetch('{% url "generate_ideas" %}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
-        body: JSON.stringify({ topics: selectedTopics, context: context, model: selectedModel }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to generate ideas.');
-
-      const modelNames = { claude: 'Claude', openai: 'OpenAI', auto: 'Auto' };
-      const badge = document.getElementById('modelUsedBadge');
-      badge.textContent = modelNames[data.model_used || selectedModel] || selectedModel;
-      badge.className = 'model-used-badge model-' + (data.model_used || selectedModel);
-
-      renderIdeas(data.ideas);
-    } catch (err) {
-      const errEl = document.getElementById('errorState');
-      errEl.textContent = err.message;
-      errEl.style.display = 'flex';
-    } finally {
-      document.getElementById('loadingState').style.display = 'none';
-      document.getElementById('generateBtn').disabled = false;
-    }
-  }
-
-  function renderIdeas(ideas) {
-    const grid = document.getElementById('ideasGrid');
-    grid.innerHTML = '';
-    ideas.forEach(function(idea, index) {
-      const card = document.createElement('div');
-      card.className = 'idea-result-card';
-      card.onclick = function() { selectIdea(card, idea.title, idea.description); };
-      card.innerHTML =
-        '<div class="idea-result-num">Idea ' + String(index + 1).padStart(2,'0') + '</div>' +
-        '<div class="idea-result-title">' + escapeHtml(idea.title) + '</div>' +
-        '<div class="idea-result-desc">' + escapeHtml(idea.description) + '</div>' +
-        (idea.angle ? '<div class="idea-result-angle"><i class="bi bi-arrow-right-short"></i>' + escapeHtml(idea.angle) + '</div>' : '');
-      grid.appendChild(card);
+  try {
+    const res = await fetch('{% url "generate_ideas" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
+      body: JSON.stringify({ topics: selectedTopics, context: context, model: selectedModel }),
     });
-    document.getElementById('ideasResults').style.display = 'block';
-  }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate ideas.');
 
-  function selectIdea(card, title, description) {
-    document.querySelectorAll('.idea-result-card').forEach(c => c.classList.remove('selected'));
-    card.classList.add('selected');
-    sessionStorage.setItem('ai_idea', title + ': ' + description);
-    document.getElementById('useIdeaSection').style.display = 'flex';
-    document.getElementById('useIdeaSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+    const modelNames = { claude:'🤖 Claude', openai:'✨ OpenAI', gemini:'🌟 Gemini', auto:'⚡ Auto' };
+    const badge = document.getElementById('modelUsedBadge');
+    badge.textContent = modelNames[data.model_used] || data.model_used;
+    badge.className = 'model-used-badge model-' + data.model_used;
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.appendChild(document.createTextNode(text));
-    return div.innerHTML;
+    renderIdeas(data.ideas);
+  } catch (err) {
+    const errEl = document.getElementById('errorState');
+    errEl.textContent = err.message;
+    errEl.style.display = 'flex';
+  } finally {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('generateBtn').disabled = false;
   }
+}
+
+function renderIdeas(ideas) {
+  const grid = document.getElementById('ideasGrid');
+  grid.innerHTML = '';
+  ideas.forEach(function(idea, index) {
+    const card = document.createElement('div');
+    card.className = 'idea-result-card';
+    card.onclick = function() { selectIdea(card, idea.title, idea.description); };
+    card.innerHTML =
+      '<div class="idea-result-num">Idea ' + String(index + 1).padStart(2,'0') + '</div>' +
+      '<div class="idea-result-title">' + escapeHtml(idea.title) + '</div>' +
+      '<div class="idea-result-desc">' + escapeHtml(idea.description) + '</div>' +
+      (idea.angle ? '<div class="idea-result-angle"><i class="bi bi-arrow-right-short"></i>' + escapeHtml(idea.angle) + '</div>' : '');
+    grid.appendChild(card);
+  });
+  document.getElementById('ideasResults').style.display = 'block';
+}
+
+function selectIdea(card, title, description) {
+  document.querySelectorAll('.idea-result-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  sessionStorage.setItem('ai_idea', title + ': ' + description);
+  document.getElementById('useIdeaSection').style.display = 'flex';
+  document.getElementById('useIdeaSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(text)));
+  return d.innerHTML;
+}
 </script>
 {% endblock %}

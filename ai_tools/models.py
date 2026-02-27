@@ -93,6 +93,13 @@ class BlogDraft(models.Model):
         max_length=30, blank=True, default='claude',
         help_text='AI model used: claude, openai, auto'
     )
+    # SEO Outline (stored as JSON)
+    outline = models.JSONField(default=dict, blank=True, help_text='SEO blog outline generated before full blog')
+    # Bullet-point summary generated with blog
+    summary = models.JSONField(default=list, blank=True, help_text='Key takeaway bullet points')
+    # SEO keywords extracted from outline
+    seo_keywords = models.JSONField(default=list, blank=True, help_text='SEO focus keywords')
+
     linked_article = models.ForeignKey(
         'articles.Article',
         on_delete=models.SET_NULL,
