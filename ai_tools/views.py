@@ -193,4 +193,18 @@ def delete_draft_view(request, draft_id):
     draft = get_object_or_404(BlogDraft, id=draft_id, user=request.user)
     draft.delete()
     messages.success(request, 'Draft deleted.')
-    return redirect('blog_generator')
+    return redirect('manage_blogs')
+
+
+@login_required
+def manage_blogs_view(request):
+    """List all blog drafts for the current user."""
+    drafts = BlogDraft.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'ai_tools/manage_blogs.html', {'drafts': drafts})
+
+
+@login_required
+def manage_ideas_view(request):
+    """List all idea generation requests for the current user."""
+    idea_requests = IdeaGenerationRequest.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'ai_tools/manage_ideas.html', {'idea_requests': idea_requests})

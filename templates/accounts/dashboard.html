@@ -1,198 +1,245 @@
-{% extends 'base.html' %}
+{% extends 'base_sidebar.html' %}
 
 {% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <!-- Header -->
-  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+<div class="dash-page">
+
+  <!-- Welcome -->
+  <div class="dash-welcome">
     <div>
-      <h1 style="font-family:var(--font-serif);font-size:2rem;font-weight:800;">
-        {% if user.is_staff %}Admin Dashboard{% else %}My Dashboard{% endif %}
-      </h1>
-      <p style="color:var(--text-muted);margin:0;">Welcome back, {{ user.get_full_name }}</p>
+      <h1 class="dash-welcome-title">Welcome back, {{ user.get_full_name|default:user.username }}! 👋</h1>
+      <p class="dash-welcome-sub">Here's what's happening with your magazine today.</p>
     </div>
-    <div class="d-flex gap-2 flex-wrap">
-      <a href="{% url 'idea_generator' %}" class="btn btn-outline-gold btn-sm">
-        <i class="bi bi-lightbulb me-1"></i>Generate Ideas
+    <div class="dash-welcome-actions">
+      <a href="{% url 'idea_generator' %}" class="dash-btn dash-btn-outline">
+        <i class="bi bi-lightbulb-fill"></i> Generate Idea
       </a>
-      <a href="{% url 'blog_generator' %}" class="btn btn-outline-gold btn-sm">
-        <i class="bi bi-robot me-1"></i>AI Draft
-      </a>
-      <a href="{% url 'article_create' %}" class="btn btn-gold btn-sm">
-        <i class="bi bi-pencil-square me-1"></i>Write Article
+      <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary">
+        <i class="bi bi-pencil-square"></i> Generate Blog
       </a>
     </div>
   </div>
 
-  <!-- Stats -->
-  <div class="row g-3 mb-5">
-    <div class="col-sm-6 col-lg-3">
-      <div class="dashboard-stat-card">
-        <div class="stat-icon gold"><i class="bi bi-file-earmark-text"></i></div>
-        <div>
-          <div class="stat-value">{{ published_count }}</div>
-          <div class="stat-label">Published</div>
-        </div>
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-card-icon" style="background:#EEF2FF;color:#4F46E5;">
+        <i class="bi bi-file-earmark-check-fill"></i>
+      </div>
+      <div class="stat-card-body">
+        <div class="stat-card-value">{{ published_count }}</div>
+        <div class="stat-card-label">Published Articles</div>
+      </div>
+      <div class="stat-card-trend up">
+        <i class="bi bi-arrow-up-short"></i>
       </div>
     </div>
-    <div class="col-sm-6 col-lg-3">
-      <div class="dashboard-stat-card">
-        <div class="stat-icon blue"><i class="bi bi-file-earmark-code"></i></div>
-        <div>
-          <div class="stat-value">{{ draft_count }}</div>
-          <div class="stat-label">Drafts</div>
-        </div>
+
+    <div class="stat-card">
+      <div class="stat-card-icon" style="background:#FFF7ED;color:#EA580C;">
+        <i class="bi bi-file-earmark-code-fill"></i>
+      </div>
+      <div class="stat-card-body">
+        <div class="stat-card-value">{{ draft_count }}</div>
+        <div class="stat-card-label">Draft Articles</div>
+      </div>
+      <div class="stat-card-trend">
+        <i class="bi bi-minus"></i>
       </div>
     </div>
+
+    <div class="stat-card">
+      <div class="stat-card-icon" style="background:#F0FDF4;color:#16A34A;">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div class="stat-card-body">
+        <div class="stat-card-value">{{ user.blog_drafts.count }}</div>
+        <div class="stat-card-label">AI Blog Drafts</div>
+      </div>
+      <div class="stat-card-trend up">
+        <i class="bi bi-stars"></i>
+      </div>
+    </div>
+
     {% if user.is_staff and total_users %}
-    <div class="col-sm-6 col-lg-3">
-      <div class="dashboard-stat-card">
-        <div class="stat-icon green"><i class="bi bi-people"></i></div>
-        <div>
-          <div class="stat-value">{{ total_users }}</div>
-          <div class="stat-label">Total Users</div>
-        </div>
+    <div class="stat-card">
+      <div class="stat-card-icon" style="background:#FDF4FF;color:#9333EA;">
+        <i class="bi bi-people-fill"></i>
+      </div>
+      <div class="stat-card-body">
+        <div class="stat-card-value">{{ total_users }}</div>
+        <div class="stat-card-label">Total Users</div>
+      </div>
+      <div class="stat-card-trend up">
+        <i class="bi bi-arrow-up-short"></i>
+      </div>
+    </div>
+    {% else %}
+    <div class="stat-card">
+      <div class="stat-card-icon" style="background:#EFF6FF;color:#2563EB;">
+        <i class="bi bi-lightbulb-fill"></i>
+      </div>
+      <div class="stat-card-body">
+        <div class="stat-card-value">{{ user.idea_requests.count }}</div>
+        <div class="stat-card-label">Idea Sessions</div>
+      </div>
+      <div class="stat-card-trend up">
+        <i class="bi bi-arrow-up-short"></i>
       </div>
     </div>
     {% endif %}
-    <div class="col-sm-6 col-lg-3">
-      <div class="dashboard-stat-card">
-        <div class="stat-icon red"><i class="bi bi-robot"></i></div>
-        <div>
-          <div class="stat-value">{{ user.blog_drafts.count }}</div>
-          <div class="stat-label">AI Drafts</div>
-        </div>
-      </div>
-    </div>
   </div>
 
-  <div class="row g-4">
+  <!-- Content Grid -->
+  <div class="dash-content-grid">
+
     <!-- Recent Articles Table -->
-    <div class="col-lg-8">
-      <div class="card-dark p-0 overflow-hidden">
-        <div class="d-flex align-items-center justify-content-between px-4 py-3" style="border-bottom:1px solid var(--border);">
-          <h2 style="font-family:var(--font-serif);font-size:1.2rem;margin:0;">
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <div>
+          <h2 class="dash-card-title">
             {% if user.is_staff %}All Recent Articles{% else %}My Articles{% endif %}
           </h2>
-          <a href="{% url 'article_create' %}" class="btn btn-gold btn-sm">
-            <i class="bi bi-plus me-1"></i>New
-          </a>
+          <p class="dash-card-subtitle">Latest published and draft articles</p>
         </div>
+        <a href="{% url 'article_create' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+          <i class="bi bi-plus-lg"></i> New Article
+        </a>
+      </div>
 
-        {% if recent_articles %}
-        <div class="table-responsive">
-          <table class="table table-dark-custom mb-0">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Status</th>
-                <th>Views</th>
-                <th>Date</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for article in recent_articles %}
-              <tr>
-                <td>
-                  <a href="{% url 'article_detail' article.slug %}" style="color:var(--text-primary);font-weight:600;font-size:0.875rem;" class="line-clamp-2">
-                    {{ article.title|truncatechars:50 }}
-                  </a>
+      {% if recent_articles %}
+      <div class="dash-table-wrap">
+        <table class="dash-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Views</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for article in recent_articles %}
+            <tr>
+              <td>
+                <div class="dash-table-title">
+                  <a href="{% url 'article_detail' article.slug %}">{{ article.title|truncatechars:48 }}</a>
                   {% if article.ai_generated %}
-                  <span class="badge-ai ms-1"><i class="bi bi-stars"></i></span>
+                  <span class="ai-badge"><i class="bi bi-stars"></i> AI</span>
                   {% endif %}
-                </td>
-                <td style="font-size:0.8rem;color:var(--text-muted);">{{ article.category|default:"—" }}</td>
-                <td><span class="badge-status-{{ article.status }}">{{ article.get_status_display }}</span></td>
-                <td style="color:var(--text-muted);font-size:0.8rem;">{{ article.views }}</td>
-                <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;">{{ article.created_at|date:"M d" }}</td>
-                <td>
-                  <a href="{% url 'article_edit' article.slug %}" class="btn btn-sm btn-dark-secondary" style="font-size:0.75rem;padding:0.2rem 0.5rem;">
+                </div>
+              </td>
+              <td><span class="dash-tag">{{ article.category|default:"General" }}</span></td>
+              <td>
+                <span class="status-badge status-{{ article.status }}">
+                  {{ article.get_status_display }}
+                </span>
+              </td>
+              <td class="dash-table-muted">{{ article.views }}</td>
+              <td class="dash-table-muted">{{ article.created_at|date:"M d, Y" }}</td>
+              <td>
+                <div class="dash-table-actions">
+                  <a href="{% url 'article_edit' article.slug %}" class="dash-icon-btn" title="Edit">
                     <i class="bi bi-pencil"></i>
                   </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <div class="text-center py-5">
-          <i class="bi bi-file-earmark-text" style="font-size:3rem;color:var(--text-muted);"></i>
-          <p style="color:var(--text-muted);margin-top:1rem;">No articles yet.</p>
-          <a href="{% url 'article_create' %}" class="btn btn-gold btn-sm mt-2">Write your first article</a>
-        </div>
-        {% endif %}
+                  <a href="{% url 'article_detail' article.slug %}" class="dash-icon-btn" title="View">
+                    <i class="bi bi-eye"></i>
+                  </a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+      {% else %}
+      <div class="dash-empty">
+        <i class="bi bi-file-earmark-text"></i>
+        <p>No articles yet. Start writing!</p>
+        <a href="{% url 'article_create' %}" class="dash-btn dash-btn-primary dash-btn-sm">Write First Article</a>
+      </div>
+      {% endif %}
     </div>
 
-    <!-- Quick Actions Sidebar -->
-    <div class="col-lg-4">
-      <!-- AI Tools -->
-      <div class="card-dark p-4 mb-3" style="border-color:rgba(200,169,110,0.3);background:linear-gradient(135deg,rgba(200,169,110,0.06),rgba(200,169,110,0.02));">
-        <h3 style="font-family:var(--font-serif);font-size:1.1rem;margin-bottom:1.25rem;">
-          <i class="bi bi-stars me-2 text-gold"></i>AI Writing Tools
-        </h3>
-        <div class="d-flex flex-column gap-2">
-          <a href="{% url 'idea_generator' %}" class="btn btn-gold btn-sm">
-            <i class="bi bi-lightbulb me-2"></i>Generate Ideas
+    <!-- Quick Actions + Recent Drafts -->
+    <div class="dash-side-panel">
+
+      <!-- Quick AI Tools -->
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>AI Tools</h2>
+        </div>
+        <div class="quick-actions">
+          <a href="{% url 'idea_generator' %}" class="quick-action-card">
+            <div class="quick-action-icon" style="background:#EEF2FF;color:#4F46E5;">
+              <i class="bi bi-lightbulb-fill"></i>
+            </div>
+            <div class="quick-action-body">
+              <div class="quick-action-title">Generate Idea</div>
+              <div class="quick-action-sub">AI-powered article ideas</div>
+            </div>
+            <i class="bi bi-arrow-right quick-action-arrow"></i>
           </a>
-          <a href="{% url 'blog_generator' %}" class="btn btn-outline-gold btn-sm">
-            <i class="bi bi-robot me-2"></i>Draft with AI
+          <a href="{% url 'blog_generator' %}" class="quick-action-card">
+            <div class="quick-action-icon" style="background:#F0FDF4;color:#16A34A;">
+              <i class="bi bi-pencil-square"></i>
+            </div>
+            <div class="quick-action-body">
+              <div class="quick-action-title">Generate Blog</div>
+              <div class="quick-action-sub">Full draft in seconds</div>
+            </div>
+            <i class="bi bi-arrow-right quick-action-arrow"></i>
+          </a>
+          <a href="{% url 'manage_blogs' %}" class="quick-action-card">
+            <div class="quick-action-icon" style="background:#FFF7ED;color:#EA580C;">
+              <i class="bi bi-journal-text"></i>
+            </div>
+            <div class="quick-action-body">
+              <div class="quick-action-title">Manage Blogs</div>
+              <div class="quick-action-sub">View all AI drafts</div>
+            </div>
+            <i class="bi bi-arrow-right quick-action-arrow"></i>
+          </a>
+          <a href="{% url 'manage_ideas' %}" class="quick-action-card">
+            <div class="quick-action-icon" style="background:#FDF4FF;color:#9333EA;">
+              <i class="bi bi-collection-fill"></i>
+            </div>
+            <div class="quick-action-body">
+              <div class="quick-action-title">Manage Ideas</div>
+              <div class="quick-action-sub">View all idea sessions</div>
+            </div>
+            <i class="bi bi-arrow-right quick-action-arrow"></i>
           </a>
         </div>
       </div>
 
       <!-- Recent AI Drafts -->
       {% if user.blog_drafts.all %}
-      <div class="card-dark p-4">
-        <h3 style="font-family:var(--font-serif);font-size:1rem;margin-bottom:1rem;">
-          <i class="bi bi-file-text me-2 text-gold"></i>Recent AI Drafts
-        </h3>
-        {% for draft in user.blog_drafts.all|slice:":4" %}
-        <div style="margin-bottom:0.75rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);">
-          <div style="font-size:0.875rem;color:var(--text-primary);font-weight:600;" class="line-clamp-2">
-            {{ draft.title|default:draft.idea|truncatechars:50 }}
-          </div>
-          <div class="d-flex align-items-center justify-content-between mt-1">
-            <span class="draft-status {{ draft.status }}">{{ draft.get_status_display }}</span>
-            <a href="{% url 'edit_draft' draft.id %}" style="font-size:0.75rem;color:var(--primary);">Edit</a>
-          </div>
+      <div class="dash-card mt-3">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">Recent AI Drafts</h2>
+          <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
-        {% endfor %}
-        <a href="{% url 'blog_generator' %}" style="font-size:0.8rem;color:var(--primary);">View all drafts →</a>
+        <div class="recent-drafts">
+          {% for draft in user.blog_drafts.all|slice:":5" %}
+          <div class="recent-draft-item">
+            <div class="recent-draft-icon">
+              <i class="bi bi-file-text-fill"></i>
+            </div>
+            <div class="recent-draft-body">
+              <div class="recent-draft-title">{{ draft.title|default:draft.idea|truncatechars:40 }}</div>
+              <div class="recent-draft-meta">{{ draft.created_at|date:"M d, Y" }}</div>
+            </div>
+            <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
+          </div>
+          {% endfor %}
+        </div>
       </div>
       {% endif %}
-
-      <!-- Profile quick link -->
-      <div class="card-dark p-4 mt-3">
-        <h3 style="font-family:var(--font-serif);font-size:1rem;margin-bottom:1rem;">
-          <i class="bi bi-person me-2 text-gold"></i>Account
-        </h3>
-        <div class="d-flex align-items-center gap-3 mb-3">
-          <div style="width:48px;height:48px;border-radius:50%;background:var(--dark-tertiary);display:flex;align-items:center;justify-content:center;border:2px solid var(--border);">
-            {% if user.avatar %}
-            <img src="{{ user.avatar.url }}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">
-            {% else %}
-            <i class="bi bi-person" style="color:var(--text-muted);font-size:1.25rem;"></i>
-            {% endif %}
-          </div>
-          <div>
-            <div style="font-weight:600;font-size:0.9rem;">{{ user.get_full_name }}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">{{ user.email }}</div>
-          </div>
-        </div>
-        <a href="{% url 'profile' %}" class="btn btn-dark-secondary btn-sm w-100">
-          <i class="bi bi-gear me-1"></i>Edit Profile
-        </a>
-        {% if user.is_staff %}
-        <a href="{% url 'admin:index' %}" class="btn btn-outline-gold btn-sm w-100 mt-2">
-          <i class="bi bi-shield-check me-1"></i>Admin Panel
-        </a>
-        {% endif %}
-      </div>
     </div>
   </div>
 </div>

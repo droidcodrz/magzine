@@ -1,0 +1,91 @@
+{% extends 'base_sidebar.html' %}
+
+{% block title %}Manage Blogs{% endblock %}
+{% block page_title %}Manage Blogs{% endblock %}
+
+{% block content %}
+<div class="dash-page">
+
+  <!-- Page Header -->
+  <div class="dash-welcome">
+    <div>
+      <h1 class="dash-welcome-title">Manage Blogs</h1>
+      <p class="dash-welcome-sub">All your AI-generated blog drafts in one place.</p>
+    </div>
+    <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary">
+      <i class="bi bi-plus-lg"></i> Generate New Blog
+    </a>
+  </div>
+
+  <div class="dash-card">
+    {% if drafts %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Title / Idea</th>
+            <th>Status</th>
+            <th>Linked Article</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for draft in drafts %}
+          <tr>
+            <td class="dash-table-muted">{{ forloop.counter }}</td>
+            <td>
+              <div class="dash-table-title">
+                <a href="{% url 'edit_draft' draft.id %}">
+                  {{ draft.title|default:draft.idea|truncatechars:55 }}
+                </a>
+                <span class="ai-badge"><i class="bi bi-stars"></i> AI</span>
+              </div>
+              {% if draft.idea %}
+              <div class="dash-table-sub">{{ draft.idea|truncatechars:80 }}</div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
+            </td>
+            <td>
+              {% if draft.linked_article %}
+              <a href="{% url 'article_detail' draft.linked_article.slug %}" class="dash-link">
+                <i class="bi bi-link-45deg"></i> View Article
+              </a>
+              {% else %}
+              <span class="dash-table-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="dash-table-muted" style="white-space:nowrap;">{{ draft.created_at|date:"M d, Y" }}</td>
+            <td>
+              <div class="dash-table-actions">
+                <a href="{% url 'edit_draft' draft.id %}" class="dash-icon-btn" title="Edit">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <form method="post" action="{% url 'delete_draft' draft.id %}" style="display:inline;" onsubmit="return confirm('Delete this draft?')">
+                  {% csrf_token %}
+                  <button type="submit" class="dash-icon-btn dash-icon-btn-danger" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="dash-empty">
+      <i class="bi bi-pencil-square"></i>
+      <p>No blog drafts yet. Generate your first AI blog draft!</p>
+      <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+        <i class="bi bi-stars"></i> Generate Blog
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

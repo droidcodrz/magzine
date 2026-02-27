@@ -1,0 +1,75 @@
+{% extends 'base_sidebar.html' %}
+
+{% block title %}Manage Ideas{% endblock %}
+{% block page_title %}Manage Ideas{% endblock %}
+
+{% block content %}
+<div class="dash-page">
+
+  <!-- Page Header -->
+  <div class="dash-welcome">
+    <div>
+      <h1 class="dash-welcome-title">Manage Ideas</h1>
+      <p class="dash-welcome-sub">All your AI-generated idea sessions in one place.</p>
+    </div>
+    <a href="{% url 'idea_generator' %}" class="dash-btn dash-btn-primary">
+      <i class="bi bi-plus-lg"></i> Generate New Ideas
+    </a>
+  </div>
+
+  <div class="dash-card">
+    {% if idea_requests %}
+    <div class="dash-table-wrap">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Topics</th>
+            <th>Ideas Generated</th>
+            <th>Context</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for req in idea_requests %}
+          <tr>
+            <td class="dash-table-muted">{{ forloop.counter }}</td>
+            <td>
+              <div class="tag-wrap">
+                {% for topic in req.topics %}
+                <span class="dash-tag">{{ topic }}</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td class="dash-table-muted">
+              {% if req.generated_ideas %}
+                {{ req.generated_ideas|length }} idea{{ req.generated_ideas|length|pluralize }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="dash-table-muted">
+              {% if req.additional_context %}
+                {{ req.additional_context|truncatechars:60 }}
+              {% else %}
+                <span style="color:#cbd5e1;">None</span>
+              {% endif %}
+            </td>
+            <td class="dash-table-muted" style="white-space:nowrap;">{{ req.created_at|date:"M d, Y" }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="dash-empty">
+      <i class="bi bi-lightbulb"></i>
+      <p>No idea sessions yet. Generate your first set of ideas!</p>
+      <a href="{% url 'idea_generator' %}" class="dash-btn dash-btn-primary dash-btn-sm">
+        <i class="bi bi-stars"></i> Generate Ideas
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

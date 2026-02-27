@@ -1,128 +1,119 @@
-{% extends 'base.html' %}
+{% extends 'base_sidebar.html' %}
 
-{% block title %}AI Blog Draft Generator{% endblock %}
+{% block title %}Generate Blog{% endblock %}
+{% block page_title %}Generate Blog{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-10">
+<div class="dash-page">
 
-      <!-- Header -->
-      <div class="text-center mb-5">
-        <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:rgba(52,152,219,0.12);border-radius:50%;border:2px solid rgba(52,152,219,0.3);margin-bottom:1.5rem;">
-          <i class="bi bi-robot" style="font-size:1.8rem;color:var(--info);"></i>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-icon" style="background:#F0FDF4;color:#16A34A;">
+      <i class="bi bi-pencil-square"></i>
+    </div>
+    <div>
+      <h1 class="page-header-title">AI Blog Draft Generator</h1>
+      <p class="page-header-sub">Share your article idea and Claude AI will generate a full draft you can edit and publish.</p>
+    </div>
+  </div>
+
+  <div class="generator-layout">
+
+    <!-- Left: Generator Form -->
+    <div class="generator-main">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">Your Article Idea</h2>
+          <span class="dash-card-subtitle" id="charCountLabel">0 / 1000 characters</span>
         </div>
-        <h1 style="font-family:var(--font-serif);font-size:2.5rem;font-weight:800;margin-bottom:0.75rem;">
-          AI Blog Draft Generator
-        </h1>
-        <p style="color:var(--text-secondary);max-width:550px;margin:0 auto;font-size:1.05rem;">
-          Share your article idea and Claude AI will generate a full draft that you can edit and publish.
-        </p>
-      </div>
 
-      <!-- Generator Card -->
-      <div class="card-dark p-4 p-lg-5 mb-5">
-        <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:700;margin-bottom:0.5rem;">
-          Your Article Idea
-        </h2>
-        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.25rem;">
-          Describe your article idea in detail. The more context you provide, the better the draft.
-        </p>
-
-        <textarea id="ideaInput" class="form-control mb-3" rows="5"
+        <textarea id="ideaInput" class="gen-textarea gen-textarea-lg" rows="6"
           placeholder="e.g., 'Write an article about how remote work has changed urban planning in major cities, focusing on the decline of office districts and rise of mixed-use neighborhoods...'"></textarea>
 
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div style="font-size:0.8rem;color:var(--text-muted);">
-            <span id="charCount">0</span>/1000 characters
-          </div>
-          <button id="generateBtn" class="btn btn-gold btn-lg px-5" onclick="generateDraft()">
-            <i class="bi bi-stars me-2"></i>Generate Draft
+        <div class="gen-actions">
+          <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateDraft()">
+            <i class="bi bi-stars"></i> Generate Draft
           </button>
-        </div>
-      </div>
-
-      <!-- Loading State -->
-      <div id="loadingState" class="text-center py-5" style="display:none;">
-        <div class="spinner-border spinner-gold mb-3" role="status" style="width:3rem;height:3rem;">
-          <span class="visually-hidden">Loading...</span>
-        </div>
-        <p style="color:var(--text-secondary);">Claude is writing your draft...</p>
-        <p style="color:var(--text-muted);font-size:0.85rem;">This may take 15-30 seconds</p>
-      </div>
-
-      <!-- Error State -->
-      <div id="errorState" class="alert alert-danger" style="display:none;"></div>
-
-      <!-- Generated Draft Preview -->
-      <div id="draftPreview" style="display:none;">
-        <hr class="divider">
-        <div class="section-header">
-          <h2 class="section-title">Generated Draft</h2>
-          <span style="font-size:0.8rem;color:var(--text-muted);"><i class="bi bi-stars me-1 text-gold"></i>AI Generated</span>
-        </div>
-
-        <div class="card-dark p-4 p-lg-5 mb-3">
-          <h3 id="draftTitle" style="font-family:var(--font-serif);font-size:2rem;font-weight:800;margin-bottom:1.5rem;"></h3>
-          <div id="draftContent" class="article-content"></div>
-        </div>
-
-        <div class="d-flex justify-content-center gap-3 flex-wrap">
-          <button class="btn btn-outline-gold" onclick="generateDraft()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
-          </button>
-          <a id="editDraftBtn" href="#" class="btn btn-gold btn-lg px-5">
-            <i class="bi bi-pencil-square me-2"></i>Edit & Save Draft
+          <a href="{% url 'manage_blogs' %}" class="dash-btn dash-btn-outline">
+            <i class="bi bi-journal-text"></i> My Drafts
           </a>
         </div>
+        <p class="gen-hint"><i class="bi bi-info-circle me-1"></i>Powered by Claude AI · Generation takes 15–30 seconds</p>
       </div>
 
-      <!-- Existing Drafts -->
-      {% if drafts %}
-      <div style="margin-top:4rem;">
-        <div class="section-header">
-          <h2 class="section-title">My Drafts</h2>
-          <a href="{% url 'blog_generator' %}" class="btn btn-outline-gold btn-sm">New Draft</a>
+      <!-- Loading -->
+      <div id="loadingState" class="gen-loading" style="display:none;">
+        <div class="gen-spinner"></div>
+        <div>
+          <p>Claude is writing your draft...</p>
+          <p class="gen-loading-sub">This may take 15–30 seconds</p>
+        </div>
+      </div>
+
+      <!-- Error -->
+      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;"></div>
+
+      <!-- Draft Preview -->
+      <div id="draftPreview" style="display:none;">
+        <div class="dash-card mt-4">
+          <div class="dash-card-header">
+            <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#16A34A;"></i>Generated Draft</h2>
+            <span class="ai-badge"><i class="bi bi-stars"></i> AI Generated</span>
+          </div>
+          <div class="draft-preview-body">
+            <h3 id="draftTitle" class="draft-preview-title"></h3>
+            <div id="draftContent" class="draft-preview-content"></div>
+          </div>
+          <div class="gen-actions" style="margin-top:1.5rem;">
+            <button class="dash-btn dash-btn-outline" onclick="generateDraft()">
+              <i class="bi bi-arrow-clockwise"></i> Regenerate
+            </button>
+            <a id="editDraftBtn" href="#" class="dash-btn dash-btn-primary">
+              <i class="bi bi-pencil-square"></i> Edit & Save Draft
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Recent Drafts -->
+    <div class="generator-side">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">Recent Drafts</h2>
+          <a href="{% url 'manage_blogs' %}" class="dash-link">View all</a>
         </div>
 
-        <div class="row g-3">
-          {% for draft in drafts %}
-          <div class="col-md-6">
-            <div class="draft-card">
-              <div class="d-flex justify-content-between align-items-start mb-2">
-                <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);" class="line-clamp-2">
-                  {{ draft.title|default:draft.idea|truncatechars:60 }}
-                </div>
-                <span class="draft-status {{ draft.status }} ms-2">{{ draft.get_status_display }}</span>
-              </div>
-              <div style="font-size:0.8rem;color:var(--text-muted);margin-bottom:1rem;">
-                <i class="bi bi-clock me-1"></i>{{ draft.created_at|date:"M d, Y" }}
-              </div>
-              <div style="font-size:0.8rem;color:var(--text-secondary);font-style:italic;" class="line-clamp-2 mb-3">
-                {{ draft.idea|truncatechars:100 }}
-              </div>
-              <div class="d-flex gap-2">
-                <a href="{% url 'edit_draft' draft.id %}" class="btn btn-gold btn-sm">
-                  <i class="bi bi-pencil me-1"></i>Edit
-                </a>
-                {% if draft.linked_article %}
-                <a href="{% url 'article_detail' draft.linked_article.slug %}" class="btn btn-outline-gold btn-sm">
-                  <i class="bi bi-eye me-1"></i>View Article
-                </a>
-                {% endif %}
-                <form method="post" action="{% url 'delete_draft' draft.id %}" class="confirm-delete ms-auto">
-                  {% csrf_token %}
-                  <button type="submit" class="btn btn-sm" style="background:rgba(231,76,60,0.15);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
-              </div>
+        {% if drafts %}
+          {% for draft in drafts|slice:":6" %}
+          <div class="history-item">
+            <div class="history-item-title">
+              <a href="{% url 'edit_draft' draft.id %}">{{ draft.title|default:draft.idea|truncatechars:45 }}</a>
+            </div>
+            <div class="d-flex align-items-center justify-content-between mt-1">
+              <span class="history-item-date">{{ draft.created_at|date:"M d, Y" }}</span>
+              <span class="status-badge status-{{ draft.status }}">{{ draft.get_status_display }}</span>
             </div>
           </div>
           {% endfor %}
+        {% else %}
+        <div class="dash-empty-sm">
+          <i class="bi bi-file-text"></i>
+          <p>No drafts yet</p>
         </div>
+        {% endif %}
       </div>
-      {% endif %}
+
+      <!-- Tips -->
+      <div class="dash-card mt-3 tip-card">
+        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Tips for Better Drafts</h3>
+        <ul class="tip-list">
+          <li>Be specific about your topic and angle</li>
+          <li>Mention your target audience</li>
+          <li>Include key points you want covered</li>
+          <li>Specify the tone (formal, casual, etc.)</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
@@ -132,7 +123,6 @@
 <script>
   let currentDraftId = null;
 
-  // Pre-fill from idea generator if available
   window.addEventListener('load', function() {
     const savedIdea = sessionStorage.getItem('ai_idea');
     if (savedIdea) {
@@ -147,23 +137,17 @@
 
   function updateCharCount() {
     const count = ideaInput.value.length;
-    document.getElementById('charCount').textContent = count;
-    document.getElementById('charCount').style.color = count > 900 ? '#e74c3c' : 'var(--text-muted)';
+    const label = document.getElementById('charCountLabel');
+    label.textContent = count + ' / 1000 characters';
+    label.style.color = count > 900 ? '#ef4444' : '';
   }
 
   async function generateDraft() {
-    const idea = document.getElementById('ideaInput').value.trim();
+    const idea = ideaInput.value.trim();
+    if (!idea) { alert('Please enter your article idea.'); return; }
+    if (idea.length < 10) { alert('Please provide more detail.'); return; }
 
-    if (!idea) {
-      alert('Please enter your article idea.');
-      return;
-    }
-    if (idea.length < 10) {
-      alert('Please provide more detail about your idea.');
-      return;
-    }
-
-    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('draftPreview').style.display = 'none';
     document.getElementById('errorState').style.display = 'none';
     document.getElementById('generateBtn').disabled = true;
@@ -171,25 +155,17 @@
     try {
       const response = await fetch('{% url "generate_draft" %}', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify({ idea: idea }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate draft.');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Failed to generate draft.');
       currentDraftId = data.draft_id;
       renderDraft(data);
-
     } catch (err) {
-      document.getElementById('errorState').textContent = err.message;
-      document.getElementById('errorState').style.display = 'block';
+      const errEl = document.getElementById('errorState');
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
     } finally {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('generateBtn').disabled = false;
@@ -198,8 +174,6 @@
 
   function renderDraft(data) {
     document.getElementById('draftTitle').textContent = data.title;
-
-    // Render content (convert markdown-like formatting)
     let content = data.content
       .replace(/## (.*?)$/gm, '<h2>$1</h2>')
       .replace(/### (.*?)$/gm, '<h3>$1</h3>')
@@ -208,9 +182,7 @@
       .replace(/^> (.*?)$/gm, '<blockquote>$1</blockquote>')
       .replace(/\n\n/g, '</p><p>')
       .replace(/\n/g, '<br>');
-    content = '<p>' + content + '</p>';
-
-    document.getElementById('draftContent').innerHTML = content;
+    document.getElementById('draftContent').innerHTML = '<p>' + content + '</p>';
     document.getElementById('editDraftBtn').href = '/ai/blog-generator/draft/' + currentDraftId + '/';
     document.getElementById('draftPreview').style.display = 'block';
     document.getElementById('draftPreview').scrollIntoView({ behavior: 'smooth' });

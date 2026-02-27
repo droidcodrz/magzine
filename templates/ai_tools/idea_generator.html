@@ -1,33 +1,33 @@
-{% extends 'base.html' %}
+{% extends 'base_sidebar.html' %}
 
-{% block title %}Idea Generator{% endblock %}
+{% block title %}Generate Idea{% endblock %}
+{% block page_title %}Generate Idea{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-lg-10">
+<div class="dash-page">
 
-      <!-- Header -->
-      <div class="text-center mb-5">
-        <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;background:rgba(200,169,110,0.15);border-radius:50%;border:2px solid rgba(200,169,110,0.3);margin-bottom:1.5rem;">
-          <i class="bi bi-lightbulb-fill" style="font-size:1.8rem;color:var(--primary);"></i>
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-icon" style="background:#EEF2FF;color:#4F46E5;">
+      <i class="bi bi-lightbulb-fill"></i>
+    </div>
+    <div>
+      <h1 class="page-header-title">AI Idea Generator</h1>
+      <p class="page-header-sub">Select topics and let Claude AI generate compelling magazine article ideas for you.</p>
+    </div>
+  </div>
+
+  <div class="generator-layout">
+
+    <!-- Left: Generator Form -->
+    <div class="generator-main">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">1. Choose Topics</h2>
+          <span class="dash-card-subtitle">Select up to 8 topic areas</span>
         </div>
-        <h1 style="font-family:var(--font-serif);font-size:2.5rem;font-weight:800;margin-bottom:0.75rem;">
-          AI Idea Generator
-        </h1>
-        <p style="color:var(--text-secondary);max-width:550px;margin:0 auto;font-size:1.05rem;">
-          Select topic categories and let Claude AI generate compelling magazine article ideas tailored to your focus.
-        </p>
-      </div>
 
-      <!-- Generator Card -->
-      <div class="card-dark p-4 p-lg-5 mb-4">
-        <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:700;margin-bottom:0.5rem;">
-          1. Choose Your Topics
-        </h2>
-        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1.5rem;">Select one or more topic areas (up to 8)</p>
-
-        <div class="topic-grid" id="topicGrid">
+        <div class="topic-grid" id="topicGrid" style="padding:1.25rem 1.5rem 0;">
           {% for value, label, icon in topic_choices %}
           <div class="topic-chip" data-topic="{{ value }}" onclick="toggleTopic(this)">
             <i class="{{ icon }}"></i>
@@ -36,81 +36,92 @@
           {% endfor %}
         </div>
 
-        <div style="margin-top:2rem;">
-          <h2 style="font-family:var(--font-serif);font-size:1.3rem;font-weight:700;margin-bottom:0.5rem;">
-            2. Add Context <span style="font-size:0.85rem;font-weight:400;color:var(--text-muted);">(optional)</span>
-          </h2>
-          <textarea id="additionalContext" class="form-control" rows="3"
-            placeholder="Add any specific focus, angle, or context for the ideas... e.g., 'Focus on local stories in London' or 'Target young professionals'"></textarea>
+        <div style="padding:1.25rem 1.5rem 0;">
+          <label class="gen-label">2. Add Context <span class="gen-label-optional">(optional)</span></label>
+          <textarea id="additionalContext" class="gen-textarea" rows="3"
+            placeholder="e.g., 'Focus on local stories in London' or 'Target young professionals aged 25-35'"></textarea>
         </div>
 
-        <div style="margin-top:2rem;text-align:center;">
-          <button id="generateBtn" class="btn btn-gold btn-lg px-5" onclick="generateIdeas()">
-            <i class="bi bi-stars me-2"></i>Generate Ideas
+        <div class="gen-actions">
+          <button id="generateBtn" class="dash-btn dash-btn-primary dash-btn-lg" onclick="generateIdeas()">
+            <i class="bi bi-stars"></i> Generate Ideas
           </button>
-          <div style="font-size:0.8rem;color:var(--text-muted);margin-top:0.75rem;">
-            <i class="bi bi-info-circle me-1"></i>Powered by Claude AI
+          <a href="{% url 'manage_ideas' %}" class="dash-btn dash-btn-outline">
+            <i class="bi bi-collection"></i> View History
+          </a>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div id="loadingState" class="gen-loading" style="display:none;">
+        <div class="gen-spinner"></div>
+        <p>Claude is generating your ideas...</p>
+      </div>
+
+      <!-- Error -->
+      <div id="errorState" class="dash-alert dash-alert-danger" style="display:none;"></div>
+
+      <!-- Results -->
+      <div id="ideasResults" style="display:none;">
+        <div class="dash-card mt-4">
+          <div class="dash-card-header">
+            <h2 class="dash-card-title"><i class="bi bi-stars me-2" style="color:#4F46E5;"></i>Generated Ideas</h2>
+            <button class="dash-btn dash-btn-outline dash-btn-sm" onclick="generateIdeas()">
+              <i class="bi bi-arrow-clockwise"></i> Regenerate
+            </button>
+          </div>
+          <div class="ideas-grid" id="ideasGrid"></div>
+
+          <!-- CTA -->
+          <div id="useIdeaSection" style="display:none;" class="gen-cta">
+            <hr class="gen-divider">
+            <p>Ready to write this article?</p>
+            <a href="{% url 'blog_generator' %}" class="dash-btn dash-btn-primary">
+              <i class="bi bi-pencil-square"></i> Generate Full Draft
+            </a>
+            <a href="{% url 'article_create' %}" class="dash-btn dash-btn-outline">
+              <i class="bi bi-pen"></i> Write Manually
+            </a>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Loading State -->
-      <div id="loadingState" class="text-center py-5" style="display:none;">
-        <div class="spinner-border spinner-gold mb-3" role="status" style="width:3rem;height:3rem;">
-          <span class="visually-hidden">Loading...</span>
+    <!-- Right: History Panel -->
+    <div class="generator-side">
+      <div class="dash-card">
+        <div class="dash-card-header">
+          <h2 class="dash-card-title">Recent Sessions</h2>
+          <a href="{% url 'manage_ideas' %}" class="dash-link">View all</a>
         </div>
-        <p style="color:var(--text-secondary);">Claude is generating your ideas...</p>
-      </div>
-
-      <!-- Error State -->
-      <div id="errorState" class="alert alert-danger" style="display:none;"></div>
-
-      <!-- Ideas Results -->
-      <div id="ideasResults" style="display:none;">
-        <div class="section-header">
-          <h2 class="section-title">Generated Ideas</h2>
-          <button class="btn btn-outline-gold btn-sm" onclick="generateIdeas()">
-            <i class="bi bi-arrow-clockwise me-1"></i>Regenerate
-          </button>
-        </div>
-
-        <div class="row g-3" id="ideasGrid"></div>
-
-        <!-- Use Selected Idea -->
-        <div id="useIdeaSection" style="display:none;margin-top:2rem;text-align:center;">
-          <hr class="divider">
-          <p style="color:var(--text-secondary);margin-bottom:1rem;">Ready to write this article?</p>
-          <a id="writeDraftBtn" href="{% url 'blog_generator' %}" class="btn btn-gold btn-lg px-5">
-            <i class="bi bi-robot me-2"></i>Generate Full Draft with AI
-          </a>
-          <a href="{% url 'article_create' %}" class="btn btn-outline-gold btn-lg px-5 ms-2">
-            <i class="bi bi-pencil-square me-2"></i>Write Manually
-          </a>
-        </div>
-      </div>
-
-      <!-- Past Generations -->
-      {% if recent_requests %}
-      <div style="margin-top:3rem;">
-        <h2 class="section-title" style="margin-bottom:1.5rem;">Recent Generations</h2>
-        <div class="row g-3">
+        {% if recent_requests %}
           {% for req in recent_requests %}
-          <div class="col-md-6">
-            <div class="card-dark p-3">
-              <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">
-                {{ req.created_at|date:"M d, Y H:i" }}
-              </div>
-              <div class="tag-cloud">
-                {% for topic in req.topics %}
-                <span class="tag-chip" style="font-size:0.7rem;padding:0.15rem 0.5rem;">{{ topic }}</span>
-                {% endfor %}
-              </div>
+          <div class="history-item">
+            <div class="history-item-date">{{ req.created_at|date:"M d, Y · H:i" }}</div>
+            <div class="history-item-topics">
+              {% for topic in req.topics %}
+              <span class="dash-tag">{{ topic }}</span>
+              {% endfor %}
             </div>
           </div>
           {% endfor %}
+        {% else %}
+        <div class="dash-empty-sm">
+          <i class="bi bi-clock-history"></i>
+          <p>No sessions yet</p>
         </div>
+        {% endif %}
       </div>
-      {% endif %}
+
+      <!-- Tips -->
+      <div class="dash-card mt-3 tip-card">
+        <h3 class="tip-title"><i class="bi bi-info-circle-fill me-2"></i>Tips</h3>
+        <ul class="tip-list">
+          <li>Select multiple topics for cross-topic ideas</li>
+          <li>Add context to narrow the focus</li>
+          <li>Click an idea card to select it, then generate a full draft</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
@@ -119,7 +130,6 @@
 {% block extra_js %}
 <script>
   let selectedTopics = [];
-  let selectedIdeaTitle = '';
 
   function toggleTopic(chip) {
     const topic = chip.dataset.topic;
@@ -141,11 +151,8 @@
       alert('Please select at least one topic.');
       return;
     }
-
     const context = document.getElementById('additionalContext').value.trim();
-
-    // Show loading
-    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('ideasResults').style.display = 'none';
     document.getElementById('errorState').style.display = 'none';
     document.getElementById('generateBtn').disabled = true;
@@ -153,24 +160,16 @@
     try {
       const response = await fetch('{% url "generate_ideas" %}', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': CSRF_TOKEN,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN },
         body: JSON.stringify({ topics: selectedTopics, context: context }),
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate ideas.');
-      }
-
+      if (!response.ok) throw new Error(data.error || 'Failed to generate ideas.');
       renderIdeas(data.ideas);
-
     } catch (err) {
-      document.getElementById('errorState').textContent = err.message;
-      document.getElementById('errorState').style.display = 'block';
+      const errEl = document.getElementById('errorState');
+      errEl.textContent = err.message;
+      errEl.style.display = 'block';
     } finally {
       document.getElementById('loadingState').style.display = 'none';
       document.getElementById('generateBtn').disabled = false;
@@ -180,39 +179,27 @@
   function renderIdeas(ideas) {
     const grid = document.getElementById('ideasGrid');
     grid.innerHTML = '';
-
     ideas.forEach(function(idea, index) {
       const card = document.createElement('div');
-      card.className = 'col-md-6';
+      card.className = 'idea-result-card';
+      card.onclick = function() { selectIdea(card, idea.title, idea.description); };
       card.innerHTML = `
-        <div class="idea-card" onclick="selectIdea(this, '${escapeHtml(idea.title)}', '${escapeHtml(idea.description)}')">
-          <div class="idea-number">Idea ${String(index + 1).padStart(2,'0')}</div>
-          <div class="idea-title">${escapeHtml(idea.title)}</div>
-          <div class="idea-desc">${escapeHtml(idea.description)}</div>
-          ${idea.angle ? `<div class="idea-angle"><i class="bi bi-arrow-right-short me-1"></i>${escapeHtml(idea.angle)}</div>` : ''}
-          ${idea.audience ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.5rem;"><i class="bi bi-people me-1"></i>${escapeHtml(idea.audience)}</div>` : ''}
-        </div>
+        <div class="idea-result-num">Idea ${String(index + 1).padStart(2,'0')}</div>
+        <div class="idea-result-title">${escapeHtml(idea.title)}</div>
+        <div class="idea-result-desc">${escapeHtml(idea.description)}</div>
+        ${idea.angle ? `<div class="idea-result-angle"><i class="bi bi-arrow-right-short"></i>${escapeHtml(idea.angle)}</div>` : ''}
       `;
       grid.appendChild(card);
     });
-
     document.getElementById('ideasResults').style.display = 'block';
   }
 
   function selectIdea(card, title, description) {
-    // Deselect all
-    document.querySelectorAll('.idea-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.idea-result-card').forEach(c => c.classList.remove('selected'));
     card.classList.add('selected');
-    selectedIdeaTitle = title;
-
-    // Show use idea section with the title pre-filled in blog generator link
-    const useSection = document.getElementById('useIdeaSection');
-    useSection.style.display = 'block';
-
-    // Store idea in sessionStorage for blog generator to pick up
     sessionStorage.setItem('ai_idea', title + ': ' + description);
-
-    useSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('useIdeaSection').style.display = 'block';
+    document.getElementById('useIdeaSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   function escapeHtml(text) {
